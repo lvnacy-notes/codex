@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "."
+		},
+		{
+			"path": "../.obsidian/commands"
+		},
+		{
+			"path": "../ENVOY"
+		}
+	],
+	"settings": {
+		"workbench.preferredDarkColorTheme": "Astra 🌌 - Valorant"
+	}
+}
