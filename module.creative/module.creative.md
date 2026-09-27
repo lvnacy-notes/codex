@@ -6,6 +6,7 @@ affiliations:
 created: 2026-07-23
 modified: 2026-09-26
 context:
+  - "[[.codex]]"
 tags:
 ---
 This system replaces the old Templater scaffold scripts (e.g. `novellaScaffold`) with a class-based note-generation system built on CodeScript Toolkit. The old scripts became unwieldy because Templater doesn't support real JS import/export — everything must live in a single file, which can become unweildy. CodeScript Toolkit supports genuine ESM `import`/`export`, so generation logic can finally be split across files and reused instead of duplicated.
@@ -43,23 +44,28 @@ The shared foundation itself — `BaseClass`, `BaseModal`, `controls/`, `utils/l
 ---
 
 ```
-module.creative/                  <-- we are here
+module.creative/       <-- we are here
+├── core/
+│   └── manuscriptPipelines.js  - helper module for story scaffolding
 ├── objects/
-│   ├── Scene.js       — extends BaseClass; scene-specific fields + body
-│   ├── Manuscript.js  — extends BaseClass; per-stage fields + editorial dashboard body
-│   ├── Story.js       — extends BaseClass; story-level fields + dashboard body + scene-template generation
-│   └── StoryArchive.js — extends Archive (shared, `.scripts/lib/objects/Archive.js`); story-scoped integrity/snapshot checks
+│   ├── Scene.js            — extends BaseClass; scene-specific fields + body
+│   ├── Manuscript.js       — extends BaseClass;
+│	│						  per-stage fields + editorial dashboard body
+│   ├── Story.js            — extends BaseClass;
+│	│						  story-level fields + dashboard body +
+│	│						  scene-template generation
+│   └── StoryArchive.js     — extends Archive (shared,
+│							  `.scripts/lib/objects/Archive.js`);
+│							  story-scoped integrity/snapshot checks
 └── modals/
-    ├── SceneModal.js  — extends BaseModal; scene-specific fields
-    └── StoryModal.js  — extends BaseModal; story-specific fields
+    ├── SceneModal.js       — extends BaseModal; scene-specific fields
+    └── StoryModal.js       — extends BaseModal; story-specific fields
 ```
 
-That's the whole of it — `BaseClass`, `BaseModal`, `controls/`, and the `create-*.js` commands all live one level up (`.scripts/lib/`, `.scripts/commands/`), shared with ENVOY and whatever comes next. Calamity's own tree only holds what's actually Calamity-specific. As more taxonomy classes get built out (the World-Building classes), they land here the same way — `objects/<Class>.js` + `modals/<Class>Modal.js`, both extending the shared base directly, unless a cluster of Calamity classes turns out to share enough that an intermediate class (the way `Envoy`/`Market` sit between `BaseClass` and ENVOY's six leaf classes) makes sense here too.
+That's the whole of it — `BaseClass`, `BaseModal`, `controls/`, and the `create-*.js` commands all live one level over (`.codex/core.apparatus/{ controls, modals, objects }/`, `.commands/`). Creative's own tree only holds what is Creative-specific. As more taxonomy classes get built out, they land here the same way — `objects/<Class>.js` + `modals/<Class>Modal.js`, both extending the shared base directly, unless a cluster of Creative classes turn out to share enough that an intermediate class makes sense here too.
 
-- `lib/objects/` — every Calamity taxonomy-class subclass of `BaseClass`.
-- `lib/modals/` — every Calamity taxonomy-class subclass of `BaseModal`.
-
-No `controls/` or `commands/` of Calamity's own — both live at the shared `.scripts/` level (see `../README.md`), the same as ENVOY's.
+- `objects/` — every Creative taxonomy-class subclass of `BaseClass`.
+- `modals/` — every Creative taxonomy-class subclass of `BaseModal`.
 
 ## completed
 ---
@@ -69,13 +75,13 @@ No `controls/` or `commands/` of Calamity's own — both live at the shared `.sc
 - `Manuscript` — extends `BaseClass`; adds `stage`, the same `stage`-derived status-key logic as `Scene` (`statusFieldFor()`), `priorStage`, `context`, `storyTag`, and `longform` (including `sceneTemplate`); supplies the per-stage editorial dashboard body (inline comments, scene metadata completeness, status distribution, cross-stage lineage).
 - `Story` — extends `BaseClass`; adds `cycle`, `title`, `title-abbv`, `gitRepoUrl`, `storyStatus`, `stage`/`editorial-status`, `manuscriptLinks`, publication fields, and `pipeline`/`storyTag` getters; supplies the story-level dashboard body (stage completion, word count, scene status by stage, cross-stage lineage, recent activity, unresolved editorial notes — the stage-completion block branches per stage on the correct status vocabulary, same serial-draft/everything-else split as `Scene`). Also generates that story's scene Templater templates via `buildSceneTemplates()` (one to three `.md` files, placed at the story's own root — see below) and exports `sceneTemplateSuffixForStage(stage)` so the calling command can wire each stage's `Manuscript.longform.sceneTemplate` to the matching template's vault path.
 - `StoryModal` — extends `BaseModal`; adds `titleAbbv` (required — `BaseModal` has no built-in required-field validation, so the actual block on an empty value lives in `calamity-create-story.js`), `category`, `cycle`, `affiliations`, `gitRepoUrl`, `storyStatus`, `editorialStatus`, `tags` fields.
-- `calamity-create-story.js` (`.scripts/commands/`) — invocable script (`checkCallback`, folder-gated to a resolvable folder) that opens `StoryModal`, builds a `Story`, generates its scene templates first (so their real vault paths are known), then one `Manuscript` per pipeline stage — each wired to the matching template via `sceneTemplateSuffixForStage()` — then the `ARCHIVE` dashboard + `DRAFTS`/`CHANGELOG` folders, then creates + opens the `Story` note last.
-- `create-scene.js` (`.scripts/commands/`) — invocable script (`export async function invoke(app) {}`) that opens `SceneModal`, resolves the folder via `Scene.resolveFolder(app)`, instantiates `Scene`, and creates + opens the file.
-- `StoryArchive` — extends the shared `Archive` (`.scripts/lib/objects/Archive.js` — see `../README.md`); adds no frontmatter fields of its own (`Archive`'s own frontmatter is already sufficient) and implements `Archive`'s hook methods for a story's own dashboard: `integrityChecks()` returns three `dataviewjs` checks scoped to the story's tag (story-level fields present, manuscript-level fields present including `longform.*`, and scene-level required fields — each resolving `editorial-status`/`serial-status` the same `stage`-derived way as `Scene`/`Manuscript` do), `snapshotSectionTitle()` returns `'drafts'`, and `snapshotChecks()` returns two more (snapshot-folder existence per pipeline stage, and pre-removal validation for manuscripts already sitting in `ARCHIVE/DRAFTS`). One instance is created per scaffolded story, at `ARCHIVE/ARCHIVE.md` within the story's own folder.
+- `creative-create-story.js` (`/.commands/`) — invocable script (`checkCallback`, folder-gated to a resolvable folder) that opens `StoryModal`, builds a `Story`, generates its scene templates first (so their real vault paths are known), then one `Manuscript` per pipeline stage — each wired to the matching template via `sceneTemplateSuffixForStage()` — then the `ARCHIVE` dashboard + `DRAFTS`/`CHANGELOG` folders, then creates + opens the `Story` note last.
+- `create-scene.js` (`/.commands/`) — invocable script (`export async function invoke(app) {}`) that opens `SceneModal`, resolves the folder via `Scene.resolveFolder(app)`, instantiates `Scene`, and creates + opens the file.
+- `StoryArchive` — extends the shared `Archive` (`/.codex/core.apparatus/objects/Archive.js`); adds no frontmatter fields of its own and implements `Archive`'s hook methods for a story's own dashboard: `integrityChecks()` returns three `dataviewjs` checks scoped to the story's tag (story-level fields present, manuscript-level fields present including `longform.*`, and scene-level required fields — each resolving `editorial-status`/`serial-status` the same `stage`-derived way as `Scene`/`Manuscript` do), `snapshotSectionTitle()` returns `'drafts'`, and `snapshotChecks()` returns two more (snapshot-folder existence per pipeline stage, and pre-removal validation for manuscripts already sitting in `ARCHIVE/DRAFTS`). One instance is created per scaffolded story, at `ARCHIVE/ARCHIVE.md` within the story's own folder.
 
 ### Scene template generation
 
-Each scaffolded story gets its own scene Templater templates, placed at the story project's root folder (not inside any stage folder), for use later when actually spawning scene notes:
+Each scaffolded story gets its own scene templates, placed at the story project's root folder (not inside any stage folder), for use later when actually spawning scene notes:
 
 - **Serial-category stories** get three: `<title-abbv>-scene-serial` (stage `serial-draft`), `<title-abbv>-scene-reassembly` (stage `reassembly`), and `<title-abbv>-scene-editorial` (stage left blank — covers the remaining numbered edit stages, which all share the same shape).
 - **Every other category** gets just the one `<title-abbv>-scene-editorial`.
@@ -88,14 +94,5 @@ All of them prefill only `tags` (the story's own tag); `created` is left as Temp
 ---
 
 - Adopt the newer shared-core patterns on `Scene`/`SceneModal` when it's worth doing: a `Scene.categoryOptions()` override (`SceneModal` currently takes plain text for `category` rather than the multi-select/suggest fallback `BaseModal.buildCategorySetting()` provides), and `Log` tracing in `Scene`'s creation path to match `BaseClass.create()`'s pattern.
-- `Manuscript`'s `modified` field is still unaddressed (same open item as everywhere else `BaseClass.baseFrontmatterFields()` stamps it blank).
-- Decide, per future class, whether it uses the default `resolveFolder()` strategy (as `Scene` does) or needs something else — a fixed/dynamic folder search (ENVOY's pattern) or a folder-suggest field collected directly in its modal.
-- Build out the remaining taxonomy classes on the same `BaseClass`/`BaseModal` pattern (the World-Building classes) — and revisit whether an intermediate shared class (mirroring ENVOY's `Envoy`/`Market`) makes sense once there's more than one to compare.
 
-Resolved since the last pass: `import { moment } from 'obsidian'` and `app.vault.getAllFolders(true)` both confirmed working — the former is load-bearing across `BaseClass` and several ENVOY classes now, the latter is exactly how ENVOY's dynamic folder resolution works. `Manuscript`, `Story`, and `StoryModal` are built out; `Story`'s scene-template generation and its Longform `sceneTemplate` wiring are working end-to-end in the vault. `StoryArchive` is now documented above.
-
-## related docs
----
-
-- `../README.md` — the shared core (`BaseClass`, `BaseModal`, `controls/`, `utils/logger.js`) this module extends from
-- `envoy/README.md` — ENVOY, the other module built on the same foundation — worth a look for patterns (intermediate shared classes, suggest-enabled fields, dynamic folder resolution) that may end up useful here too
+Resolved since the last pass: `import { moment } from 'obsidian'` and `app.vault.getAllFolders(true)` both confirmed working — the former is load-bearing across `BaseClass`. `Manuscript`, `Story`, and `StoryModal` are built out; `Story`'s scene-template generation and its Longform `sceneTemplate` wiring are working end-to-end in the vault. `StoryArchive` is now documented above.
