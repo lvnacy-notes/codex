@@ -24,10 +24,10 @@
 import * as mla from './mla.js';
 import * as apa from './apa.js';
 import * as chicago from './chicago.js';
-import { resolveAuthors } from '../lib/controls/resolve-authors.js';
-import { resolveNoteTitle, resolveNoteTitles } from '../lib/controls/resolve-titles.js';
-import { resolveCollectionFields } from '../lib/controls/resolve-collection-fields.js';
-import { resolveLibraryNote } from '../lib/controls/resolve-library.js';
+import { resolveAuthors } from '../controls/resolve-authors.js';
+import { resolveNoteTitle, resolveNoteTitles } from '../controls/resolve-titles.js';
+import { resolveCollectionFields } from '../controls/resolve-collection-fields.js';
+import { resolveLibraryNote } from '../controls/resolve-library.js';
 import { Log } from '../../utils/logger.js';
 
 export const FORMATTERS = {

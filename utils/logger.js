@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-const { Notice } = await requireAsync('obsidian');
+import { Notice } from 'obsidian';
 
 /**
  * Emergency (emerg): indicates that the system is unusable and requires immediate attention.
