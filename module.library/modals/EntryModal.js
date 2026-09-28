@@ -1,4 +1,5 @@
 import { WorksModal } from './WorksModal.js';
+import { resolveLibraryFolder } from '../controls/resolve-library.js';
 import { Entry } from '../objects/Entry.js';
 
 export class EntryModal extends WorksModal {
@@ -32,7 +33,7 @@ export class EntryModal extends WorksModal {
 			contentEl,
 			'Reference work',
 			'referenceWork',
-			{ folderPath: worksFolder }
+			{ folderPath: worksFolder, resolveFolderPath: resolveLibraryFolder }
 		);
 		this.buildTextSetting(
 			contentEl,

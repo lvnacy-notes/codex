@@ -268,7 +268,7 @@ Defines the mechanics underlying the `Library Sync Dependency Docs` command.
 
 Complete inventory of the JavaScript files currently contained in `.obsidian/apparatus/library/`. Export names and inheritance are recorded as implemented; `BaseClass` and `BaseModal` are shared modules outside this directory.
 
-### `lib/objects/`
+### `objects/`
 
 | File            | Export       | Extends     | Specification                        |
 | --------------- | ------------ | ----------- | ------------------------------------ |
@@ -290,7 +290,7 @@ Complete inventory of the JavaScript files currently contained in `.obsidian/app
 | `Thesis.js`     | `Thesis`     | `Works`     | scoped to [[Works.js Specification]] |
 | `Works.js`      | `Works`      | `BaseClass` | [[Works.js Specification]]           |
 
-### `lib/modals/`
+### `modals/`
 
 | File | Export | Extends |
 | ---- | ------ | ------- |
@@ -312,7 +312,7 @@ Complete inventory of the JavaScript files currently contained in `.obsidian/app
 | `ThesisModal.js` | `ThesisModal` | `WorksModal` |
 | `WorksModal.js` | `WorksModal` | `BaseModal` |
 
-### `lib/controls/`
+### `controls/`
 
 | File | Exports |
 | ---- | ------- |

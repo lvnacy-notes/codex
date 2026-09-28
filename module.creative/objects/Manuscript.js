@@ -215,7 +215,7 @@ if (complete === 0 && incomplete === 0) {
 	dv.paragraph("\`\`\`mermaid\\n" + mermaidCode + "\`\`\`");
 }
 
-dv.paragraph(\`**Complete**: \${complete} | **Incomplete**: \${incomplete} | **Total**: \{complete + incomplete}\`);
+dv.paragraph(\`**Complete**: \${complete} | **Incomplete**: \${incomplete} | **Total**: \${complete + incomplete}\`);
 \`\`\`
 
 ## status distribution
