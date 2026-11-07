@@ -6,7 +6,7 @@ const logContext = {
 	path: 'utilities/romanNumeralConversion.js'
 };
 
-export default function convertRomantoArabic(numeral) {
+export function convertRomantoArabic(numeral) {
 
 	const romanNumeralIndex = {
 		'I': 1,

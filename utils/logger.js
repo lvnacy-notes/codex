@@ -14,7 +14,6 @@ import { Notice } from 'obsidian';
  * @param { Object } context
  * @param { string } message
  * @param { Object } error
- * 
  */
 
 export const Log = {
