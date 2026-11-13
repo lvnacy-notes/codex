@@ -130,7 +130,7 @@ if (incomplete.length > 0) {
  * @returns {string}
  */
 function sceneIntegrityScript(tag) {
-	return `const { getStagePipeline } = await requireAsync('/.codex/module.creative/core/manuscriptPipelines.js');
+	return `const { getStagePipeline } = await requireAsync('/.codex/creative/controls/manuscript-pipelines.js');
 const storyPage = dv.pages("#${ tag }").where(p => p.class === "story").array()[0];
 const stages = storyPage ? getStagePipeline(storyPage.category) : [];
 const statusOf = (p) => p["editorial-status"] ?? p["serial-status"];
@@ -163,7 +163,7 @@ for (const scene of sceneFiles) {
  * @returns {string}
  */
 function snapshotExistenceScript(tag) {
-	return `const { getStagePipeline } = await requireAsync('/.codex/module.creative/core/manuscriptPipelines.js');
+	return `const { getStagePipeline } = await requireAsync('/.codex/creative/controls/manuscript-pipelines.js');
 const storyPage = dv.pages("#${ tag }").where(p => p.class === "story").array()[0];
 const stages = storyPage ? getStagePipeline(storyPage.category) : [];
 const archiveFolder = dv.current().file.folder;

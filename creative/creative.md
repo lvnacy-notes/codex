@@ -20,7 +20,7 @@ tags:
 
 All classes currently supported in the Apparatus Creative module. No specification document exists yet for any class in this module — see §7, TODO.
 
-Class instantiation objects are stored in `module.creative/objects`. Accompanying modals are stored in `module.creative/modals`.
+Class instantiation objects are stored in `creative/objects`. Accompanying modals are stored in `creative/modals`.
 
 The classes are grouped by role:
 
@@ -81,7 +81,7 @@ The Creative module depends on the **CodeScript Toolkit** Obsidian plugin, the s
 
 ### Shared Internal Dependencies
 
-Creative scripts import shared infrastructure from outside `module.creative/`:
+Creative scripts import shared infrastructure from outside `creative/`:
 
 | Dependency | Used for |
 | ---------- | -------- |
@@ -136,7 +136,7 @@ Each template is built via a throwaway `Scene` instance, never `.create()`'d, so
 
 ### Dependency Documentation Sync
 
-This document surfaces the structure in `module.creative/` and provides an itemized inventory of code modules, found in the [[#Appendix File Inventory|File Inventory appendix]]. The `Sync Creative Dependency Documentation` command, powered by `creative-sync-dependency-docs.js`, can be run to keep that inventory current. The command generates a table under [[#Appendix Generated Dependency Map|Appendix: Generated Dependency Map]], describing static, relative imports within `module.creative/` only — dynamic imports, re-exports, and non-relative specifiers are reported separately as unresolved rather than silently omitted.
+This document surfaces the structure in `creative/` and provides an itemized inventory of code modules, found in the [[#Appendix File Inventory|File Inventory appendix]]. The `Sync Creative Dependency Documentation` command, powered by `creative-sync-dependency-docs.js`, can be run to keep that inventory current. The command generates a table under [[#Appendix Generated Dependency Map|Appendix: Generated Dependency Map]], describing static, relative imports within `creative/` only — dynamic imports, re-exports, and non-relative specifiers are reported separately as unresolved rather than silently omitted.
 
 No specification document exists yet for this command — see §7, TODO.
 
@@ -161,7 +161,7 @@ Vocabulary spec for domain-scoped statuses across the Apparatus system.
 ## Appendix: File Inventory
 ---
 
-Complete inventory of the JavaScript files currently contained in `module.creative/`. Export names and inheritance are recorded as implemented; `BaseClass`, `BaseModal`, and `Archive` are shared modules outside this directory.
+Complete inventory of the JavaScript files currently contained in `creative/`. Export names and inheritance are recorded as implemented; `BaseClass`, `BaseModal`, and `Archive` are shared modules outside this directory.
 
 ### `objects/`
 
@@ -202,4 +202,4 @@ Complete inventory of the JavaScript files currently contained in `module.creati
 | Date | Change |
 | ---- | ------ |
 | 2026-09-28 | Added the Dependency Documentation Sync subsection to §5 and the Appendix: Generated Dependency Map marker block, following `creative-sync-dependency-docs.js`'s addition — mirrors `library-sync-dependency-docs.js`/`library.md`'s existing pattern exactly. The section is empty (markers only) since the command has not yet been run. Removed the now-fulfilled Future Considerations item proposing this same addition. Added a TODO item for the new command's still-missing specification. |
-| 2026-09-28 | Restructured into the Library module's folder-note shape (Classes, Class Hierarchy, Data Flow, External Dependencies and Runtime Assumptions, Creative Tooling, References, TODO, Appendices), replacing the prior narrative walkthrough (core concepts / module map / completed / next steps). Every statement re-derived directly from the current contents of `module.creative/`; nothing carried over from the prior version's prose without re-verification against the actual code. |
+| 2026-09-28 | Restructured into the Library module's folder-note shape (Classes, Class Hierarchy, Data Flow, External Dependencies and Runtime Assumptions, Creative Tooling, References, TODO, Appendices), replacing the prior narrative walkthrough (core concepts / module map / completed / next steps). Every statement re-derived directly from the current contents of `creative/`; nothing carried over from the prior version's prose without re-verification against the actual code. |
