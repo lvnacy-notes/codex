@@ -1,18 +1,13 @@
-/**
- * Resolves a wikilink pointing at a Collection note to the periodical/
- * volume/issue fields another Work leaf needs from it at citation
- * time. Used by any leaf whose citation depends on the periodical
- * issue it belongs to, rather than the Collection note's own title.
- */
-
 import { resolveNoteFile } from './resolve-note-file.js';
 import { resolveNoteTitle } from './resolve-titles.js';
 
 /**
+ * Resolves a Collection note wikilink to the `periodical`, `volume`, and `issue` fields its citation depends on. `periodical` is the note's `periodical` link resolved to a title. Missing fields are `''`.
  * @param {import('obsidian').App} app
- * @param {string} sourcePath - path of the note containing the link
- * @param {string} rawWikilink - e.g. "[[Weird Tales Vol 5 No 3]]"
+ * @param {string} sourcePath Path of the note containing the link.
+ * @param {string} rawWikilink Wikilink text, including brackets.
  * @returns {{ periodical: string, volume: string, issue: string }}
+ * @throws {Error} When the link, or the note's `periodical` link, does not resolve to a note.
  */
 export function resolveCollectionFields(
 	app,

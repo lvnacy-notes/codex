@@ -1,11 +1,8 @@
 import { BaseModal } from '../../core/modals/BaseModal.js';
 
 /**
- * Valid length/form values for Story's `category`. A story has exactly one,
- * so the modal renders them as a pick-one dropdown stored as a one-element
- * string array (see BaseModal.buildDropdownArraySetting()), not the
- * stackable multi-select from BaseModal.buildCategorySetting(). Every
- * option here resolves to a real stage pipeline.
+ * Valid length/form values for a story's `category`.
+ * @type {string[]}
  */
 const STORY_CATEGORY_OPTIONS = [
 	'short-story',
@@ -15,7 +12,15 @@ const STORY_CATEGORY_OPTIONS = [
 	'serial',
 ];
 
+/**
+ * Modal that collects the fields of a new story.
+ */
 export class StoryModal extends BaseModal {
+	/**
+	 * Initializes the result fields.
+	 * @param {import('obsidian').App} app
+	 * @param {function(Object): (void|Promise<void>)} onSubmit Called with the result object on submit.
+	 */
 	constructor(app, onSubmit) {
 		super(app, onSubmit);
 		Object.assign(this.result, {
@@ -24,20 +29,20 @@ export class StoryModal extends BaseModal {
 			cycle: '',
 			affiliations: [],
 			gitRepoUrl: '',
+			vaultMembership: [],
 			storyStatus: '',
 			editorialStatus: '',
 			tags: [],
 		});
 	}
 
+	/**
+	 * Renders the new-story form.
+	 */
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.createEl('h2', { text: 'New Story' });
 
-		// Required -- names this story's generated scene Templater templates
-		// (e.g. `${titleAbbv}-scene-editorial.md`). BaseModal has no built-in
-		// required-field validation, so the actual hard block on an empty
-		// value lives in calamity-create-story.js.
 		this.buildTextSetting(
             contentEl,
             'Title Abbreviation',
@@ -55,7 +60,6 @@ export class StoryModal extends BaseModal {
             'affiliations',
             'affiliations'
         );
-		// Single value, not a list -- Story stores cycle as a plain string.
 		this.buildTextSuggestSetting(
             contentEl,
             'Cycle',
@@ -66,6 +70,12 @@ export class StoryModal extends BaseModal {
             contentEl,
             'Git repo URL',
             'gitRepoUrl'
+        );
+		this.buildListSuggestSetting(
+            contentEl,
+            'Vault membership',
+            'vaultMembership',
+            'vault-membership'
         );
 		this.buildDropdownSetting(
             contentEl,
@@ -80,10 +90,6 @@ export class StoryModal extends BaseModal {
                 'archived',
 		    ]
         );
-		// At-a-glance mirror of the current stage's own editorial-status --
-		// `stage` itself isn't collected here at all. It's auto-set to the
-		// pipeline's first stage by Story's constructor once `category` is
-		// known, so there's nothing meaningful to pick before that resolves.
 		this.buildDropdownSetting(
             contentEl,
             'Editorial status',

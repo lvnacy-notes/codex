@@ -1,12 +1,21 @@
 import { Archive } from '../../core/objects/Archive.js';
 
+/**
+ * Archive note for a story. Supplies the story's integrity and drafts checks.
+ */
 export class StoryArchive extends Archive {
+	/**
+	 * Returns the frontmatter fields in render order.
+	 * @returns {Object}
+	 */
 	getFrontmatterFields() {
-		// Archive's own frontmatter is already sufficient -- StoryArchive
-		// adds no fields of its own.
 		return super.getFrontmatterFields();
 	}
 
+	/**
+	 * Returns the `story`, `manuscript`, and `scene` integrity checks.
+	 * @returns {Array<{ label: string, script: string }>}
+	 */
 	integrityChecks() {
 		const tag = this.moduleTag;
 		return [
@@ -16,10 +25,18 @@ export class StoryArchive extends Archive {
 		];
 	}
 
+	/**
+	 * Returns the heading of the snapshot section.
+	 * @returns {string}
+	 */
 	snapshotSectionTitle() {
 		return 'drafts';
 	}
 
+	/**
+	 * Returns the `snapshot existence` and `pre-removal validation` checks.
+	 * @returns {Array<{ label: string, script: string }>}
+	 */
 	snapshotChecks() {
 		const tag = this.moduleTag;
 		return [
@@ -29,6 +46,11 @@ export class StoryArchive extends Archive {
 	}
 }
 
+/**
+ * Returns the DataviewJS script that reports story notes missing required fields.
+ * @param {string} tag Story tag the script queries.
+ * @returns {string}
+ */
 function storyIntegrityScript(tag) {
 	return `const storyFiles = dv.pages("#${ tag }").where(p => p.class === "story");
 
@@ -58,6 +80,11 @@ if (incomplete.length > 0) {
 }`;
 }
 
+/**
+ * Returns the DataviewJS script that reports manuscript notes missing required fields.
+ * @param {string} tag Story tag the script queries.
+ * @returns {string}
+ */
 function manuscriptIntegrityScript(tag) {
 	return `const manuscriptFiles = dv.pages("#${ tag }")
 	.where(p => p.class === "manuscript")
@@ -97,6 +124,11 @@ if (incomplete.length > 0) {
 }`;
 }
 
+/**
+ * Returns the DataviewJS script that reports scene notes missing required fields.
+ * @param {string} tag Story tag the script queries.
+ * @returns {string}
+ */
 function sceneIntegrityScript(tag) {
 	return `const { getStagePipeline } = await requireAsync('/.codex/module.creative/core/manuscriptPipelines.js');
 const storyPage = dv.pages("#${ tag }").where(p => p.class === "story").array()[0];
@@ -125,6 +157,11 @@ for (const scene of sceneFiles) {
 }`;
 }
 
+/**
+ * Returns the DataviewJS script that reports which stages have a draft snapshot folder.
+ * @param {string} tag Story tag the script queries.
+ * @returns {string}
+ */
 function snapshotExistenceScript(tag) {
 	return `const { getStagePipeline } = await requireAsync('/.codex/module.creative/core/manuscriptPipelines.js');
 const storyPage = dv.pages("#${ tag }").where(p => p.class === "story").array()[0];
@@ -140,6 +177,11 @@ const results = stages.map((stage) => {
 dv.table(["Stage", "Snapshot Status"], results);`;
 }
 
+/**
+ * Returns the DataviewJS script that reports draft snapshots missing required fields.
+ * @param {string} tag Story tag the script queries.
+ * @returns {string}
+ */
 function preRemovalValidationScript(tag) {
 	return `const draftFiles = dv.pages("#${ tag }")
 	.where(p => p.class === "manuscript")

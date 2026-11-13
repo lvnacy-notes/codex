@@ -1,27 +1,21 @@
-/**
- * Resolves a wikilink pointing at another note to that note's title, or
- * to a normalized wikilink pointing at it. Class-agnostic -- used for
- * Work-to-Work references (parent-work, subject-work, etc.), Periodical
- * references, and any other note-to-note link, since resolution itself
- * never depends on what class the linked note is.
- *
- * Built on the shared file lookup in resolve-note-file.js -- this
- * module only extracts or formats a title/link from the resolved
- * TFile.
- */
-
 import { resolveNoteFile, resolveNoteFileLenient } from './resolve-note-file.js';
 
-/** Formats a bare note title as a normalized wikilink. */
+/**
+ * Formats a bare note title as a wikilink.
+ * @param {string} basename
+ * @returns {string}
+ */
 export function toWikilink(basename) {
 	return `[[${basename}]]`;
 }
 
 /**
+ * Returns the title (basename) of the note a wikilink points at.
  * @param {import('obsidian').App} app
- * @param {string} sourcePath - path of the note containing the link
- * @param {string} rawWikilink - e.g. "[[The Great Anthology]]"
- * @returns {string} the linked note's title (its filename/basename)
+ * @param {string} sourcePath Path of the note containing the link.
+ * @param {string} rawWikilink Wikilink text, including brackets.
+ * @returns {string}
+ * @throws {Error} When the link does not resolve to a note.
  */
 export function resolveNoteTitle(
 	app,
@@ -35,7 +29,14 @@ export function resolveNoteTitle(
 	).basename;
 }
 
-/** Resolves an array of wikilinks to their titles in one call. */
+/**
+ * Resolves an array of wikilinks to their titles.
+ * @param {import('obsidian').App} app
+ * @param {string} sourcePath Path of the note containing the link.
+ * @param {string[]} [rawWikilinks] Wikilinks to resolve. Treated as empty when missing.
+ * @returns {string[]}
+ * @throws {Error} When any link does not resolve to a note.
+ */
 export function resolveNoteTitles(
 	app,
 	sourcePath,
@@ -49,10 +50,12 @@ export function resolveNoteTitles(
 }
 
 /**
- * Resolves a field that may be either a wikilink or a plain text
- * string. Only attempts resolution when the value is bracketed; a bare
- * string passes through unchanged instead of being treated as an
- * unresolvable link.
+ * Resolves a field that holds either a wikilink or plain text. Only a bracketed value is resolved. Any other value, including an empty one, is returned unchanged.
+ * @param {import('obsidian').App} app
+ * @param {string} sourcePath Path of the note containing the link.
+ * @param {string} raw Wikilink or plain text.
+ * @returns {string}
+ * @throws {Error} When a bracketed value does not resolve to a note.
  */
 export function resolveOptionalNoteTitle(
 	app,
@@ -66,17 +69,11 @@ export function resolveOptionalNoteTitle(
 }
 
 /**
- * Resolves a wikilink to a normalized wikilink pointing at the same
- * note, tolerating an unresolvable target instead of throwing: returns
- * the raw wikilink text unchanged. Does not route through Log.error()
- * -- an unresolved link here is an expected, tolerated condition (a
- * not-yet-cataloged or since-renamed cross-reference), not a failure
- * worth surfacing as a Notice.
- *
+ * Returns a normalized wikilink to the note a wikilink points at, or the raw text unchanged when it does not resolve. Never throws.
  * @param {import('obsidian').App} app
- * @param {string} sourcePath - path of the note containing the link
- * @param {string} rawWikilink - e.g. "[[The Great Anthology]]"
- * @returns {string} a normalized wikilink, or the raw wikilink text if unresolved
+ * @param {string} sourcePath Path of the note containing the link.
+ * @param {string} rawWikilink Wikilink text, including brackets.
+ * @returns {string}
  */
 export function resolveNoteLinkLenient(
 	app,
@@ -92,7 +89,13 @@ export function resolveNoteLinkLenient(
 	return file ? toWikilink(file.basename) : rawWikilink;
 }
 
-/** Resolves an array of wikilinks to normalized links leniently, in one call. */
+/**
+ * Resolves an array of wikilinks to normalized wikilinks, leaving unresolved entries unchanged. Never throws.
+ * @param {import('obsidian').App} app
+ * @param {string} sourcePath Path of the note containing the link.
+ * @param {string[]} [rawWikilinks] Wikilinks to resolve. Treated as empty when missing.
+ * @returns {string[]}
+ */
 export function resolveNoteLinksLenient(
 	app,
 	sourcePath,

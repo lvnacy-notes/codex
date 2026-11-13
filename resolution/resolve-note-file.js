@@ -1,25 +1,11 @@
-/**
- * Resolves a wikilink to the TFile it points at. The shared core used
- * by every resolve-*.js module in this directory, and by any caller
- * (e.g. a postCreate cascade) that needs the note itself rather than a
- * specific field pulled off of it.
- *
- * Throws on an unresolvable link, routed through Log.error first so
- * the failure surfaces as a visible Notice.
- */
-
 import { linkTarget } from '../utils/links.js';
-import { Log } from '../utils/logger.js';
 
 /**
- * Resolves a wikilink to its TFile, or null if it doesn't resolve.
- * Never throws -- callers that need throw-on-failure behavior should
- * use resolveNoteFile() instead.
- *
+ * Resolves a wikilink to its note. Returns `null` when the link is empty or does not resolve. Never throws.
  * @param {import('obsidian').App} app
- * @param {string} sourcePath - path of the note containing the link
- * @param {string} rawWikilink - e.g. "[[Jane A. Smith]]"
- * @returns {import('obsidian').TFile | null}
+ * @param {string} sourcePath Path of the note containing the link.
+ * @param {string} rawWikilink Wikilink text, including brackets.
+ * @returns {import('obsidian').TFile|null}
  */
 export function resolveNoteFileLenient(
 	app,
@@ -32,10 +18,12 @@ export function resolveNoteFileLenient(
 }
 
 /**
+ * Resolves a wikilink to its note.
  * @param {import('obsidian').App} app
- * @param {string} sourcePath - path of the note containing the link
- * @param {string} rawWikilink - e.g. "[[Jane A. Smith]]"
+ * @param {string} sourcePath Path of the note containing the link.
+ * @param {string} rawWikilink Wikilink text, including brackets.
  * @returns {import('obsidian').TFile}
+ * @throws {Error} When the link does not resolve to a note.
  */
 export function resolveNoteFile(
 	app,
@@ -48,13 +36,7 @@ export function resolveNoteFile(
 		rawWikilink
 	);
 	if (!file) {
-		const error = new Error(`Link did not resolve to a note: ${ rawWikilink }`);
-		Log.error(
-			'resolve-note-file',
-			error.message,
-			error
-		);
-		throw error;
+		throw new Error(`Link did not resolve to a note: ${ rawWikilink }`);
 	}
 	return file;
 }

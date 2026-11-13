@@ -1,13 +1,14 @@
 import { AbstractInputSuggest } from 'obsidian';
 
 /**
- * General-purpose vault file picker, distinct from NoteSuggest -- excludes
- * Markdown files (already served by NoteSuggest) and applies no
- * class-based filtering, since arbitrary vault files carry no
- * frontmatter. Same attach-to-text-input, onSelectCb-driven shape as
- * FolderSuggest/NoteSuggest.
+ * Suggests non-Markdown vault files for a text input. The caller assigns `onSelectCb`, which receives the selected file.
  */
 export class FileSuggest extends AbstractInputSuggest {
+	/**
+	 * Returns non-Markdown files whose path contains the query, sorted by path.
+	 * @param {string} query
+	 * @returns {import('obsidian').TFile[]}
+	 */
 	getSuggestions(query) {
 		const lowerQuery = query.toLowerCase();
 		return this.app.vault
@@ -17,10 +18,19 @@ export class FileSuggest extends AbstractInputSuggest {
 			.sort((a, b) => a.path.localeCompare(b.path));
 	}
 
+	/**
+	 * Renders the file path in the suggestion list.
+	 * @param {import('obsidian').TFile} file
+	 * @param {HTMLElement} el
+	 */
 	renderSuggestion(file, el) {
 		el.setText(file.path);
 	}
 
+	/**
+	 * Fills the input with the file path, closes the list, and calls `onSelectCb(file)`.
+	 * @param {import('obsidian').TFile} file
+	 */
 	selectSuggestion(file) {
 		this.setValue(file.path);
 		this.close();

@@ -12,9 +12,7 @@ export const SCENE_TEMPLATE_SUFFIXES = {
 };
 
 /**
- * Resolves the scene-template suffix for a manuscript stage. The serial-draft
- * and reassembly stages each map to their own suffix; every other stage maps
- * to the editorial suffix.
+ * Returns the scene-template suffix for a manuscript stage.
  * @param {string} stage Manuscript stage name.
  * @returns {string} A value from SCENE_TEMPLATE_SUFFIXES.
  */

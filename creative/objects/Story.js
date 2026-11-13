@@ -4,38 +4,50 @@ import { SCENE_TEMPLATE_SUFFIXES } from '../controls/scene-template-helpers.js';
 import { getStagePipeline } from '../controls/manuscript-pipelines.js';
 import { buildFrontmatterBlock } from '../../frontmatter';
 
+/**
+ * Story project note. Carries story metadata and lifecycle, links to one manuscript note per stage, and supplies the dashboard body and the scene templates.
+ */
 export class Story extends BaseClass {
+	/**
+	 * Value written to the `class` frontmatter field.
+	 * @type {string}
+	 */
 	static classValue = 'story';
 
+	/**
+	 * Stores the story fields.
+	 * @param {import('obsidian').App} app
+	 * @param {Object} [options]
+	 * @param {string} [options.cycle] Series name. Defaults to `''`.
+	 * @param {string} [options.title] Story title. Defaults to the filename.
+	 * @param {string} [options.titleAbbv] Abbreviated title. Defaults to `''`.
+	 * @param {string} [options.gitRepoUrl] Defaults to `''`.
+	 * @param {string[]} [options.vaultMembership] Defaults to `[]`.
+	 * @param {string} [options.storyStatus] Defaults to `''`.
+	 * @param {string} [options.stage] Active stage. Defaults to the first stage of the pipeline.
+	 * @param {string} [options.editorialStatus] Defaults to `''`.
+	 * @param {Object<string, string>} [options.manuscriptLinks] Manuscript note basename by stage name. Defaults to `{}`.
+	 * @param {string} [options.envoyProject] Defaults to `''`.
+	 * @param {boolean} [options.published] Defaults to `false`.
+	 * @param {string} [options.appleBooks] Defaults to `''`.
+	 * @param {string} [options.barnesNoble] Defaults to `''`.
+	 * @param {string} [options.cover] Defaults to `''`.
+	 * @param {string} [options.coverAltText] Defaults to `''`.
+	 * @param {string} [options.bookBlurb] Defaults to `''`.
+	 * @param {string} [options.pdf] Defaults to `''`.
+	 * @param {string} [options.epub] Defaults to `''`.
+	 * @throws {Error} When `options.stage` is not supplied and the first value of `category` has no stage pipeline.
+	 */
 	constructor(app, options = {}) {
 		super(app, options);
-		// Series participation -- stackable, paired with affiliations to
-		// identify which series/world this story belongs to. Optional.
 		this.cycle = options.cycle ?? '';
 		this.title = options.title ?? this.filename;
-		// Abbreviated title -- exists only on the Story card itself (not on
-		// Scene/Manuscript). Required at story-creation time: it names this
-		// story's generated scene Templater templates (e.g.
-		// `${titleAbbv}-scene-editorial.md`), enforced by the calling
-		// command since StoryModal has no built-in required-field check.
 		this.titleAbbv = options.titleAbbv ?? '';
 		this.gitRepoUrl = options.gitRepoUrl ?? '';
+		this.vaultMembership = options.vaultMembership ?? [];
 		this.storyStatus = options.storyStatus ?? '';
-		// stage/editorial-status here mirror the story's currently-active
-		// manuscript stage, so this one note shows project status at a
-		// glance without opening the stage folder itself. story-status is
-		// listed first in frontmatter (overall lifecycle), then stage,
-		// then editorial-status (that stage's own progress -- same field
-		// name/vocab as the stage's own Manuscript note, mirrored here for
-		// at-a-glance visibility; no separate "stage-status" domain).
-		// Defaults to the pipeline's first stage when not supplied, since
-		// a newly-scaffolded story always starts at stage one.
 		this.stage = options.stage ?? this.pipeline[0];
 		this.editorialStatus = options.editorialStatus ?? '';
-		// Map of stage name -> manuscript note basename, for the wikilinks
-		// in frontmatter. Stages with no note yet (not created) render
-		// blank -- Phase 2's orchestration layer fills these in as it
-		// creates each Manuscript.
 		this.manuscriptLinks = options.manuscriptLinks ?? {};
 		this.envoyProject = options.envoyProject ?? '';
 		this.published = options.published ?? false;
@@ -48,20 +60,36 @@ export class Story extends BaseClass {
 		this.epub = options.epub ?? '';
 	}
 
-	// Vault tag scoping this story's notes -- derived from title, single
-	// source of truth (no separate tag input needed at creation time).
+	/**
+	 * Vault tag scoping the story's notes: the title with whitespace runs replaced by `-`, lowercased.
+	 * @returns {string}
+	 */
 	get storyTag() {
 		return this.title.replace(/\s+/g, '-').toLowerCase();
 	}
 
-	// This story's stage list, resolved from the length/form in the first
-	// element of its category array via the shared pipeline config. Throws
-	// if category is empty or isn't a recognized length/form -- e.g.
-	// flash-fiction, which has no pipeline defined yet.
+	/**
+	 * Title without a leading "The", "A", or "An", for alphabetical sorting.
+	 * @returns {string}
+	 */
+	get sortTitle() {
+		return this.title.replace(/^(?:the|a|an)\s+(?=\S)/i, '');
+	}
+
+	/**
+	 * Ordered stage list for the story's length/form, taken from the first value of `category`.
+	 * @returns {string[]}
+	 * @throws {Error} When `category` is empty or its first value has no stage pipeline.
+	 */
 	get pipeline() {
 		return getStagePipeline(this.category[0]);
 	}
 
+	/**
+	 * Returns the story's frontmatter fields in render order.
+	 * @returns {Object<string, *>}
+	 * @throws {Error} When `category` is empty or its first value has no stage pipeline.
+	 */
 	getFrontmatterFields() {
 		const base = this.baseFrontmatterFields();
 		const manuscriptLinkFields = {};
@@ -76,7 +104,9 @@ export class Story extends BaseClass {
 			cycle: this.cycle,
 			title: this.title,
 			'title-abbv': this.titleAbbv,
+			'sort-title': this.sortTitle,
 			'git-repo-url': this.gitRepoUrl,
+			'vault-membership': this.vaultMembership,
 			created: base.created,
 			modified: base.modified,
 			'story-status': this.storyStatus,
@@ -93,12 +123,15 @@ export class Story extends BaseClass {
 			pdf: this.pdf,
 			epub: this.epub,
 			'sorting-spec': buildSortingSpec(this.pipeline, this.storyTag),
-			// Story's own tag always applies to itself, even if the caller
-			// didn't think to pass it explicitly via options.tags.
 			tags: Array.from(new Set([this.storyTag, ...base.tags])),
 		};
 	}
 
+	/**
+	 * Returns the story dashboard and project documentation.
+	 * @returns {string}
+	 * @throws {Error} When `category` is empty or its first value has no stage pipeline.
+	 */
 	getBody() {
 		return buildStoryDashboard({
 			title: this.title,
@@ -107,21 +140,11 @@ export class Story extends BaseClass {
 		});
 	}
 
-	// Templater `.md` scene templates for this story, generated once at
-	// story-creation time and placed at the story project's own root
-	// folder (not per-stage). These are templates, not live scene notes:
-	// most fields are left blank for the user to fill in per real note,
-	// only `tags` (this story's own tag) is always prefilled, `created`
-	// is left as Templater's own `<% tp.date.now() %>` syntax rather than
-	// a real date, and `modified` is left for a future pass. Serial
-	// projects get three stage-specific templates -- serial-draft,
-	// reassembly, and a stage-agnostic editorial template covering the
-	// remaining numbered edit stages (1st-edit/2nd-edit/3rd-edit/final,
-	// which all share the same shape); every other category gets just
-	// the one stage-agnostic editorial template. Each returned template's
-	// `suffix` matches what sceneTemplateSuffixForStage() below produces,
-	// so a caller can build a suffix -> path map here and look it up
-	// per-stage there.
+	/**
+	 * Returns the scene template files for this story: a stage-agnostic template, plus serial-draft and reassembly templates for a serial.
+	 * @returns {{suffix: string, filename: string, content: string}[]}
+	 * @throws {Error} When the first value of `category` is empty or has no stage pipeline.
+	 */
 	buildSceneTemplates() {
 		const templateSpecs = this.category[0] === 'serial'
 			? [
@@ -141,9 +164,10 @@ export class Story extends BaseClass {
 	}
 }
 
-// One-line folder-tree descriptions for stages with conventional meaning.
-// Any stage not listed here (a custom/renamed stage) falls back to its own
-// name rather than an empty description.
+/**
+ * One-line descriptions of the conventional stages, keyed by stage name.
+ * @type {Object<string, string>}
+ */
 const STAGE_DESCRIPTIONS = {
 	'shitty-first-draft': 'shitty first draft, obviously',
 	'serial-draft': 'initial serialized draft',
@@ -154,13 +178,13 @@ const STAGE_DESCRIPTIONS = {
 	'final': 'Publication-ready version',
 };
 
-// Builds one scene template's full file content (frontmatter + body) via a
-// throwaway Scene instance -- reused rather than duplicated so template
-// output always matches Scene.js's own field set, ordering, and
-// editorial-status/serial-status derivation. This instance is never
-// .create()'d (no file-existence check, no folder creation, no real vault
-// write): only its getFrontmatterFields()/getBody() are used, and `created`
-// is overwritten afterward with Templater's own date syntax.
+/**
+ * Returns a scene template's content for a stage: a frontmatter block with `created` set to a Templater date expression, a blank line, then the scene body.
+ * @param {import('obsidian').App} app
+ * @param {string} storyTag
+ * @param {string} stage
+ * @returns {string}
+ */
 function buildSceneTemplateContent(app, storyTag, stage) {
 	const scene = new Scene(app, {
 		filename: 'scene-template-placeholder',
@@ -175,19 +199,27 @@ function buildSceneTemplateContent(app, storyTag, stage) {
 	return `${ buildFrontmatterBlock(fields) }\n\n${ scene.getBody() }`;
 }
 
+/**
+ * Returns the stage entries of the folder tree, one per stage.
+ * @param {string[]} pipeline
+ * @returns {string}
+ */
 function buildFolderTreeLines(pipeline) {
 	return pipeline.map((stage, i) => {
 		const description = STAGE_DESCRIPTIONS[stage] ?? stage;
 		if (i === 0) {
-			// The first stage's folder note also carries the story bible --
-			// synopsis, character/faction/glossary tables, outline -- so it
-			// gets the expanded comment every other stage doesn't.
 			return `\u251c\u2500\u2500 ${ stage }/           # ${ description }\n\u2502   \u2514\u2500\u2500 ${ stage }.md     # contains:\n\u2502                                   - Longform project config\n\u2502                                   - story synopsis\n\u2502                                   - character, faction, glossary tables\n\u2502                                   - story outline`;
 		}
 		return `\u251c\u2500\u2500 ${ stage }/                     # ${ description }\n\u2502   \u2514\u2500\u2500 ${ stage }.md               # Longform project config`;
 	}).join('\n');
 }
 
+/**
+ * Returns the sorting specification: the stages in order, then `%`, `images`, `ARCHIVE`, and the story tag, one per line.
+ * @param {string[]} pipeline
+ * @param {string} storyTag
+ * @returns {string}
+ */
 function buildSortingSpec(pipeline, storyTag) {
 	return [
         ...pipeline,
@@ -198,6 +230,14 @@ function buildSortingSpec(pipeline, storyTag) {
     ].join('\n');
 }
 
+/**
+ * Returns the story body: dashboard queries and project documentation.
+ * @param {Object} params
+ * @param {string} params.title
+ * @param {string} params.storyTag
+ * @param {string[]} params.pipeline
+ * @returns {string}
+ */
 function buildStoryDashboard({ title, storyTag, pipeline }) {
 	return `# contents
 
@@ -210,7 +250,7 @@ function buildStoryDashboard({ title, storyTag, pipeline }) {
 
 **Stage Completion Status:**
 \`\`\`dataviewjs
-const { getStagePipeline } = await requireAsync('/.codex/module.creative/core/manuscriptPipelines.js');
+const { getStagePipeline } = await requireAsync('/.codex/creative/controls/manuscript-pipelines.js');
 const [category] = dv.current().category;
 const stages = getStagePipeline(category);
 const allScenes = dv.pages("#${ storyTag }").where(p => \`\${ p.class }\`.includes("scene"));
@@ -245,7 +285,7 @@ for (let stage of stages) {
 **Word Count by Stage:**
 \`\`\`dataviewjs
 const allScenes = dv.pages("#${ storyTag }").where(p => \`\${ p.class }\`.includes("scene"));
-const { getStagePipeline } = await requireAsync('/.codex/module.creative/core/manuscriptPipelines.js');
+const { getStagePipeline } = await requireAsync('/.codex/creative/controls/manuscript-pipelines.js');
 const [category] = dv.current().category;
 const stages = getStagePipeline(category);
 
@@ -384,7 +424,7 @@ SORT
 ## inline comments
 
 \`\`\`dataviewjs
-const { getStagePipeline } = await requireAsync('/.codex/module.creative/core/manuscriptPipelines.js');
+const { getStagePipeline } = await requireAsync('/.codex/creative/controls/manuscript-pipelines.js');
 const [category] = dv.current().category;
 const commentStages = getStagePipeline(category).slice(0, -1);
 const pages = dv.pages("#${ storyTag }")

@@ -1,19 +1,11 @@
 /**
- * Stage pipeline definitions for the Calamity story taxonomy.
- *
- * Maps a story's length/form category to its ordered manuscript stage list.
- * Single source of truth for "which stages exist, in what order" -- this is
- * the actual fix for the repetition problem the old Templater scaffolds had:
- * storyScaffoldShort/Novelette/Novella/Serial.js were four near-duplicate
- * files that differed only in this list. Now it's one data table.
- *
- * Manuscript itself doesn't import this -- it only knows its own stage and
- * whatever priorStage it's given. This module is for the orchestration layer
- * (Phase 2) that walks a story's full pipeline to create one Manuscript per
- * stage, and for Story's dashboards, which need to know the complete stage
- * list for a given length/form.
+ * @file Stage pipeline definitions: maps a story's length/form to its ordered manuscript stages.
  */
 
+/**
+ * Stage list shared by `novella` and `novel`.
+ * @type {string[]}
+ */
 const NOVELLA_PIPELINE = [
 	'shitty-first-draft',
 	'1st-edit',
@@ -22,6 +14,10 @@ const NOVELLA_PIPELINE = [
 	'final',
 ];
 
+/**
+ * Ordered stage list for each length/form.
+ * @type {Object<string, string[]>}
+ */
 const STAGE_PIPELINES = {
 	'short-story': ['shitty-first-draft', '1st-edit', 'final'],
 	'novelette': ['shitty-first-draft', '1st-edit', '2nd-edit', 'final'],
@@ -30,9 +26,12 @@ const STAGE_PIPELINES = {
 	'serial': ['serial-draft', 'reassembly', '1st-edit', '2nd-edit', '3rd-edit', 'final'],
 };
 
-// TODO: define a flash-fiction pipeline
-// getStagePipeline() throws if it's requested until this is actually decided.
-
+/**
+ * Returns the ordered stage list for a length/form.
+ * @param {string} lengthForm
+ * @returns {string[]}
+ * @throws {Error} When no pipeline is defined for `lengthForm`.
+ */
 export function getStagePipeline(lengthForm) {
 	const pipeline = STAGE_PIPELINES[lengthForm];
 	if (!pipeline) {
@@ -41,6 +40,13 @@ export function getStagePipeline(lengthForm) {
 	return pipeline;
 }
 
+/**
+ * Returns the zero-based position of a stage in a length/form's pipeline.
+ * @param {string} lengthForm
+ * @param {string} stage
+ * @returns {number}
+ * @throws {Error} When `lengthForm` has no pipeline or `stage` is not in it.
+ */
 export function getStageIndex(lengthForm, stage) {
 	const pipeline = getStagePipeline(lengthForm);
 	const index = pipeline.indexOf(stage);
@@ -50,6 +56,13 @@ export function getStageIndex(lengthForm, stage) {
 	return index;
 }
 
+/**
+ * Returns the stage before `stage` in the pipeline, or `null` for the first stage.
+ * @param {string} lengthForm
+ * @param {string} stage
+ * @returns {string|null}
+ * @throws {Error} When `lengthForm` has no pipeline or `stage` is not in it.
+ */
 export function getPriorStage(lengthForm, stage) {
 	const index = getStageIndex(lengthForm, stage);
 	return index === 0 ? null : getStagePipeline(lengthForm)[index - 1];

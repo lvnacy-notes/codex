@@ -1,8 +1,16 @@
 import { BaseModal } from './BaseModal.js';
 import { Image } from '../objects/Image.js';
 
+/**
+ * Modal that collects the fields for a new Image note.
+ */
 export class ImageModal extends BaseModal {
 
+	/**
+	 * Stores `onSubmit` and adds the Image fields to the result object.
+	 * @param {import('obsidian').App} app
+	 * @param {function(Object): void} onSubmit Called with the result object on submit.
+	 */
 	constructor(app, onSubmit) {
 		super(app, onSubmit);
 		Object.assign(this.result, {
@@ -17,6 +25,9 @@ export class ImageModal extends BaseModal {
 		});
 	}
 
+	/**
+	 * Renders the Image fields, then the shared fields and the submit button.
+	 */
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.createEl('h2', { text: 'New Image' });

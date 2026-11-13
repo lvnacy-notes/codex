@@ -1,11 +1,9 @@
-import { Log } from '../utils/logger.js';
-
 /**
- * Resolves the enclosing library for a given starting folder: walks
- * upward from startFolderPath to the nearest ancestor folder whose direct
- * contents include a note with frontmatter `class: library`, returning
- * that folder's path. Throws if none is found before the vault root, or
- * if a folder contains more than one such note.
+ * Returns the path of the folder holding the nearest library note, searching upward from `startFolderPath`. A library note has frontmatter `class: library`.
+ * @param {import('obsidian').App} app
+ * @param {string} startFolderPath Folder path the search starts from.
+ * @returns {string}
+ * @throws {Error} When no library note is found before the vault root, or a folder holds more than one library note.
  */
 export function resolveLibraryFolder(app, startFolderPath) {
 	return findLibraryNote(
@@ -16,9 +14,11 @@ export function resolveLibraryFolder(app, startFolderPath) {
 }
 
 /**
- * Same resolution as resolveLibraryFolder, returning the library's own
- * note (TFile) instead of its folder path -- for callers that need to
- * read fields off the library note itself (e.g. works-folder-name).
+ * Returns the nearest library note, searching upward from `startFolderPath`.
+ * @param {import('obsidian').App} app
+ * @param {string} startFolderPath Folder path the search starts from.
+ * @returns {import('obsidian').TFile}
+ * @throws {Error} When no library note is found before the vault root, or a folder holds more than one library note.
  */
 export function resolveLibraryNote(app, startFolderPath) {
 	return findLibraryNote(
@@ -28,6 +28,14 @@ export function resolveLibraryNote(app, startFolderPath) {
 	);
 }
 
+/**
+ * Returns the library note directly inside `folderPath`, recursing to the parent folder when it holds none.
+ * @param {import('obsidian').App} app
+ * @param {string} folderPath Folder currently searched.
+ * @param {string} startFolderPath Folder the search began from, used in the not-found message.
+ * @returns {import('obsidian').TFile}
+ * @throws {Error} When no library note is found before the vault root, or a folder holds more than one library note.
+ */
 function findLibraryNote(
 	app,
 	folderPath,
@@ -49,31 +57,18 @@ function findLibraryNote(
 			return matches[0];
 		case 0:
 			if (folderPath === '') {
-				const error = new Error(
+				throw new Error(
 					`No enclosing library found above "${ startFolderPath }".`
 				);
-				Log.error(
-					'resolve-library',
-					error.message,
-					error
-				);
-				throw error;
 			}
 			return findLibraryNote(
 				app,
 				folderPath.split('/').slice(0, -1).join('/'),
 				startFolderPath
 			);
-		default: {
-			const error = new Error(
+		default:
+			throw new Error(
 				`Multiple library notes found in "${ folderPath }".`
 			);
-			Log.error(
-				'resolve-library',
-				error.message,
-				error
-			);
-			throw error;
-		}
 	}
 }

@@ -1,7 +1,15 @@
 import { BaseModal } from '../../core/modals/BaseModal.js';
 import { Scene } from '../objects/Scene.js';
 
+/**
+ * Modal that collects the fields of a new scene.
+ */
 export class SceneModal extends BaseModal {
+	/**
+	 * Initializes the result fields.
+	 * @param {import('obsidian').App} app
+	 * @param {function(Object): (void|Promise<void>)} onSubmit Called with the result object on submit.
+	 */
 	constructor(app, onSubmit) {
 		super(app, onSubmit);
 		Object.assign(this.result, {
@@ -16,6 +24,9 @@ export class SceneModal extends BaseModal {
 		});
 	}
 
+	/**
+	 * Renders the new-scene form.
+	 */
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.createEl('h2', { text: 'New Scene' });
@@ -25,9 +36,6 @@ export class SceneModal extends BaseModal {
 			'Filename',
 			'filename'
 		);
-		// Scene has no fixed category vocabulary (none was ever decided in
-		// the taxonomy), so this correctly falls back to a suggest-enabled
-		// comma-list rather than a multi-select — see BaseClass.categoryOptions().
 		this.buildCategorySetting(contentEl, Scene);
 		this.buildListSuggestSetting(
 			contentEl,
@@ -35,10 +43,6 @@ export class SceneModal extends BaseModal {
 			'affiliations',
 			'affiliations'
 		);
-		// 'serial-draft' (not 'serial') -- must match the pipeline's own
-		// stage name (see manuscriptPipelines.js / Story.js's
-		// STAGE_DESCRIPTIONS) since Scene.statusFieldKey keys off this
-		// exact string to decide editorial-status vs serial-status.
 		this.buildDropdownSetting(
 			contentEl,
 			'Stage',
@@ -52,10 +56,6 @@ export class SceneModal extends BaseModal {
 			'3rd-edit',
 			'final',
 		]);
-		// Label covers both cases -- Scene itself derives whether this
-		// value is saved under `editorial-status` or `serial-status`
-		// based on the `stage` picked above, so there's no separate
-		// switch to keep in sync here.
 		this.buildDropdownSetting(
 			contentEl,
 			'Editorial / Serial status',

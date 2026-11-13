@@ -1,17 +1,25 @@
 import { BaseClass } from '../../core/objects/BaseClass.js';
 
+/**
+ * Scene note. Carries a manuscript stage, a stage-dependent status, a chapter, and context.
+ */
 export class Scene extends BaseClass {
+	/**
+	 * Value written to the `class` frontmatter field.
+	 * @type {string}
+	 */
 	static classValue = 'scene';
 
-	// Scenes at this stage use `serial-status` instead of `editorial-status`
-	// in their frontmatter -- same field/vocabulary, different key name,
-	// since a serial's first-draft stage is tracked distinctly per the
-	// taxonomy. Every other stage keeps `editorial-status`.
+	/**
+	 * Stage name whose scenes use `serial-status`.
+	 * @type {string}
+	 */
 	static SERIAL_STAGE = 'serial-draft';
 
-	// Value vocabularies for the two status domains -- distinct sets, not a
-	// shared one: editorial-status tracks draft/edit progress, serial-status
-	// tracks a serialized post's own publication lifecycle.
+	/**
+	 * Valid `editorial-status` values.
+	 * @type {string[]}
+	 */
 	static EDITORIAL_STATUS_VALUES = [
 		'not-started',
 		'in-progress',
@@ -19,6 +27,10 @@ export class Scene extends BaseClass {
 		'complete'
 	];
 	
+	/**
+	 * Valid `serial-status` values.
+	 * @type {string[]}
+	 */
 	static SERIAL_STATUS_VALUES = [
 		'backlog',
 		'active',
@@ -26,6 +38,15 @@ export class Scene extends BaseClass {
 		'published'
 	];
 
+	/**
+	 * Stores the scene fields.
+	 * @param {import('obsidian').App} app
+	 * @param {Object} [options]
+	 * @param {string} [options.stage] Manuscript stage name. Defaults to `''`.
+	 * @param {string} [options.editorialStatus] Status value, written under the key from `statusFieldKey`. Defaults to `''`.
+	 * @param {string} [options.chapter] Chapter number. Defaults to `''`.
+	 * @param {string} [options.context] Context value. Defaults to `''`.
+	 */
 	constructor(app, options = {}) {
 		super(app, options);
 		this.stage = options.stage ?? '';
@@ -34,20 +55,28 @@ export class Scene extends BaseClass {
 		this.context = options.context ?? '';
 	}
 
-	// Frontmatter key for this scene's status field, derived from `stage`
-	// rather than tracked separately -- `stage` is the single source of
-	// truth, so there's nothing that can drift out of sync with it.
+	/**
+	 * Frontmatter key of the status field: `serial-status` at the serial stage, otherwise `editorial-status`.
+	 * @returns {string}
+	 */
 	get statusFieldKey() {
 		return this.stage === Scene.SERIAL_STAGE ? 'serial-status' : 'editorial-status';
 	}
 
-	// Valid values for this scene's status field, matching statusFieldKey.
+	/**
+	 * Valid values for the status field named by `statusFieldKey`.
+	 * @returns {string[]}
+	 */
 	get statusValues() {
 		return this.stage === Scene.SERIAL_STAGE
 		? Scene.SERIAL_STATUS_VALUES
 		: Scene.EDITORIAL_STATUS_VALUES;
 	}
 
+	/**
+	 * Returns the scene's frontmatter fields in render order.
+	 * @returns {Object<string, *>}
+	 */
 	getFrontmatterFields() {
 		const base = this.baseFrontmatterFields();
 		return {
@@ -64,6 +93,10 @@ export class Scene extends BaseClass {
 		};
 	}
 
+	/**
+	 * Returns the scene body: a comment-listing Dataview script, an empty text area, and a status reference.
+	 * @returns {string}
+	 */
 	getBody() {
 		return `## comments
 ---

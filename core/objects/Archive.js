@@ -1,11 +1,18 @@
 import { BaseClass } from './BaseClass.js';
 
+/**
+ * Base class for a module's archive notes.
+ */
 export class Archive extends BaseClass {
+	/**
+	 * Value written to the `class` frontmatter field.
+	 */
 	static classValue = 'archive';
 
-	// Tightly coupled to class: archive and exhaustive at the system level
-	// per the Apparatus Module Taxonomy -- a candidate value outside these
-	// four is a signal the note may not actually be a true archive note.
+	/**
+	 * Returns the class's valid category strings.
+	 * @returns {string[]}
+	 */
 	static categoryOptions() {
 		return [
             'specification',
@@ -15,15 +22,27 @@ export class Archive extends BaseClass {
         ];
 	}
 
+	/**
+	 * Stores the app, the note's options, and the module tag.
+	 * @param {import('obsidian').App} app
+	 * @param {Object} options
+	 * @param {string} options.filename Note filename, without extension.
+	 * @param {string} [options.folder=''] Destination folder path.
+	 * @param {string[]} [options.category=[]]
+	 * @param {string[]} [options.affiliations=[]]
+	 * @param {string[]} [options.context=[]] Wikilinks, stored unresolved.
+	 * @param {string[]} [options.tags=[]]
+	 * @param {string} [options.moduleTag=''] Tag scoping the module's notes. Merged into `tags`.
+	 */
 	constructor(app, options = {}) {
 		super(app, options);
-		// The vault tag scoping this module's notes -- whatever a subclass's
-		// own module considers its scope tag (a story's storyTag, a
-		// library's own project tag, etc). Generic here on purpose: Archive
-		// itself has no opinion on what kind of module it's archiving.
 		this.moduleTag = options.moduleTag ?? '';
 	}
 
+	/**
+	 * Returns the frontmatter fields in render order, with `moduleTag` merged into `tags`.
+	 * @returns {Object}
+	 */
 	getFrontmatterFields() {
 		const base = this.baseFrontmatterFields();
 		const tags = this.moduleTag
@@ -32,50 +51,45 @@ export class Archive extends BaseClass {
 		return { ...base, tags };
 	}
 
-	// ------------------------------------------------------------------
-	// Override points. Archive itself has no classes it knows how to
-	// validate -- it only knows how to assemble whatever sections a
-	// subclass hands it. A module with nothing to say for a given section
-	// simply doesn't override its title (or returns an empty checks list),
-	// and that section is omitted from the generated note entirely.
-	// ------------------------------------------------------------------
 
-	// Section heading for the metadata-integrity checks. Defaults to
-	// something reasonable for every module; override only if a module
-	// wants different wording.
+	/**
+	 * Returns the heading of the integrity section.
+	 * @returns {string}
+	 */
 	integritySectionTitle() {
 		return 'archive integrity';
 	}
 
-	// Array of { label, script }, one entry per class this module wants
-	// validated. `script` is the raw DataviewJS body (no fence, no
-	// heading) -- Archive wraps it in `## label` + a dataviewjs block.
-	// Empty by default: Archive doesn't know what classes a given module
-	// has.
+	/**
+	 * Returns the checks for the integrity section. Empty by default.
+	 * @returns {Array<{ label: string, script: string }>}
+	 */
 	integrityChecks() {
 		return [];
 	}
 
-	// Snapshot/archival-state checks -- structurally identical to
-	// integrityChecks(), but its own section. Unlike integritySectionTitle(),
-	// this has NO default title -- a module with no archival-snapshot
-	// concept (which won't be every module) simply never overrides this,
-	// and the whole section is omitted rather than emitting an empty or
-	// assumed heading.
+	/**
+	 * Returns the heading of the snapshot section, or `null` to omit the section.
+	 * @returns {string|null}
+	 */
 	snapshotSectionTitle() {
 		return null;
 	}
 
+	/**
+	 * Returns the checks for the snapshot section. Empty by default.
+	 * @returns {Array<{ label: string, script: string }>}
+	 */
 	snapshotChecks() {
 		return [];
 	}
 
+	/**
+	 * Returns the overview body when `category` includes `'overview'`, otherwise `''`.
+	 * @returns {string}
+	 */
 	getBody() {
-		// Only category: overview (the ARCHIVE/README dashboard) has a
-		// prescribed template. specification/documentation are freeform,
-		// hand-authored docs -- and changelog entries are generated and
-		// owned entirely by Archivist, not by this class.
-		if (this.category !== 'overview') {
+		if (!this.category.includes('overview')) {
 			return '';
 		}
 		return buildArchiveOverview({
@@ -87,6 +101,15 @@ export class Archive extends BaseClass {
 	}
 }
 
+/**
+ * Assembles the overview body.
+ * @param {Object} sections
+ * @param {string} sections.integritySectionTitle
+ * @param {Array<{ label: string, script: string }>} sections.integrityChecks
+ * @param {string|null} sections.snapshotSectionTitle
+ * @param {Array<{ label: string, script: string }>} sections.snapshotChecks
+ * @returns {string}
+ */
 function buildArchiveOverview({
     integritySectionTitle,
     integrityChecks,
@@ -107,6 +130,12 @@ Changelog entries are generated and managed by Archivist -- run \`archivist chan
 `;
 }
 
+/**
+ * Returns a rendered checks section, or `''` when the title is falsy or there are no checks.
+ * @param {string|null} title
+ * @param {Array<{ label: string, script: string }>} checks
+ * @returns {string}
+ */
 function renderChecksSection(title, checks) {
 	if (!title || !checks || checks.length === 0) {
 		return '';

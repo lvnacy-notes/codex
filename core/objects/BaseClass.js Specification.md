@@ -3,7 +3,7 @@ class: archive
 category: specification
 affiliations:
 created: 2026-11-01
-modified: 2026-11-06
+modified: 2026-11-07
 context:
   - "[[Apparatus Module Taxonomy]]"
   - "[[Apparatus Status Taxonomy]]"
@@ -32,13 +32,15 @@ Abstract base class for every Apparatus object class. Builds a note's frontmatte
 
 Members with Kind `hook` throughout this spec are the points subclasses override or set.
 
+**Error handling:** `BaseClass` throws on failure and does not log errors. The command that invokes the class catches each error and logs it once.
+
 **Dependencies**
 
 | Import | Source | Use |
 | --- | --- | --- |
 | `moment` | `obsidian` | Supplies the `created` date |
 | `buildFrontmatterBlock` | `../../frontmatter` (defined in `build-frontmatter-block.js`) | Renders the frontmatter block, see §2 |
-| `Log` | `../../utils/logger.js` | Error, fatal, and info logging |
+| `Log` | `../../utils/logger.js` | Logs successful creation |
 
 **Constructor options**
 
@@ -56,7 +58,7 @@ Members with Kind `hook` throughout this spec are the points subclasses override
 
 | Member | Kind | Purpose | Rationale |
 | --- | --- | --- | --- |
-| `constructor(app, options = {})` | instance | Stores `app` and the options above. Throws `BaseClass requires an Obsidian app instance.` when `app` is missing and `BaseClass requires a filename.` when `options.filename` is missing. Both errors are logged through `Log.error` before being thrown. | `context` is stored raw because `BaseClass` has no resolver access. Subclasses that can resolve links layer resolution on top of the raw value. |
+| `constructor(app, options = {})` | instance | Stores `app` and the options above. Throws `BaseClass requires an Obsidian app instance.` when `app` is missing and `BaseClass requires a filename.` when `options.filename` is missing. | `context` is stored raw because `BaseClass` has no resolver access. Subclasses that can resolve links layer resolution on top of the raw value. |
 | `static classValue` | hook | Value written to the `class` frontmatter field. `null` by default; each subclass sets its own. | — |
 | `get path()` | getter | Returns `<folder>/<filename>.md`. The `<folder>/` prefix is omitted when `folder` is empty. | — |
 
@@ -147,8 +149,8 @@ None. `BaseClass` defines no status field and registers no status domain in [[Ap
 
 `create()` is async and returns the created `TFile`. It runs in this order:
 
-1. **Collision check.** If `app.vault.getAbstractFileByPath(this.path)` returns an entry, `create()` logs the error through `Log.error` and throws `A file already exists at <path>`.
-2. **Write.** `app.vault.create(this.path, this.buildContent())`. On success it logs `Created <path>` through `Log.log`. On failure it logs `Failed to create <path>` through `Log.fatal` and rethrows the original error.
+1. **Collision check.** If `app.vault.getAbstractFileByPath(this.path)` returns an entry, `create()` throws `A file already exists at <path>`.
+2. **Write.** `app.vault.create(this.path, this.buildContent())`. On success it logs `Created <path>` through `Log.log`. On failure the original error propagates unchanged.
 3. **Post-create hook.** `await this.postCreate(file)`. An error thrown by `postCreate` propagates out of `create()` unmodified.
 4. **Return.** Returns the `TFile`.
 
@@ -156,7 +158,7 @@ None. `BaseClass` defines no status field and registers no status domain in [[Ap
 
 | Member | Kind | Purpose | Rationale |
 | --- | --- | --- | --- |
-| `create()` | instance | Writes the note to the vault following the workflow above. | `postCreate` runs only after the file is confirmed on disk. When it throws, the note already exists, so the error tells the curator that primary creation succeeded and only the follow-on work needs manual reconciliation. |
+| `create()` | instance | Writes the note to the vault following the workflow above. | `postCreate` runs only after the file is confirmed on disk, so when it throws the note already exists and only the follow-on work needs manual reconciliation. `create()` throws without logging, so the invoking command logs each failure exactly once. |
 | `postCreate(file)` | hook | Runs additional work after the note is written. Receives the new `TFile`. No-op by default. | Overrides call `super.postCreate(file)` first, then add their own behavior, so the hook composes through the inheritance chain the same way `getFrontmatterFields()` does. |
 
 ## 7. Static Helpers
@@ -360,6 +362,7 @@ None.
 
 | Date       | Change       |
 | ---------- | ------------ |
-| 2026-11-01 | Initial spec |
-| 2026-11-04 | Added the input controls (`FileSuggest`, `FolderSuggest`, `NoteSuggest`, `ValueSuggest`) to §8 |
+| 2026-11-07 | Removed `Log.error` and `Log.fatal` calls from the constructor and `create()`; `BaseClass` throws and the invoking command logs |
 | 2026-11-06 | Unified `expectedClass` across `NoteSuggest` and `ValueSuggest` as `string[]`; added the shared `validateExpectedClass` |
+| 2026-11-04 | Added the input controls (`FileSuggest`, `FolderSuggest`, `NoteSuggest`, `ValueSuggest`) to §8 |
+| 2026-11-01 | Initial spec |

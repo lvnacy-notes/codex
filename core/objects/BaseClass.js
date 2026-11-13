@@ -2,42 +2,41 @@ import { moment } from 'obsidian';
 import { buildFrontmatterBlock } from '../../frontmatter';
 import { Log } from '../../utils/logger.js';
 
+/**
+ * Abstract base class for all Apparatus object classes.
+ */
 export class BaseClass {
-	// Subclasses set: static classValue = 'scene';
+	/**
+	 * Value written to the `class` frontmatter field. Set by each subclass.
+	 */
 	static classValue = null;
 
 	/**
-	 * Subclasses with a fixed category vocabulary should override this,
-	 * returning the list of valid options (e.g. static categoryOptions() {
-	 * return ['literary', 'film-tv', 'foreign-rights']; }). Returns null by
-	 * default, meaning "no fixed vocabulary" — the corresponding modal falls
-	 * back to a plain comma-separated list in that case (see BaseModal's
-	 * buildCategorySetting()). The point of the null default rather than
-	 * requiring every subclass to implement this: a class that forgets to
-	 * override it still gets a usable category input instead of none at all.
+	 * Returns the class's valid category strings, or `null` when it has no fixed vocabulary.
+	 * @returns {string[]|null}
 	 */
 	static categoryOptions() {
 		return null;
 	}
 
+	/**
+	 * Stores the app and the note's options.
+	 * @param {import('obsidian').App} app
+	 * @param {Object} options
+	 * @param {string} options.filename Note filename, without extension.
+	 * @param {string} [options.folder=''] Destination folder path.
+	 * @param {string[]} [options.category=[]]
+	 * @param {string[]} [options.affiliations=[]]
+	 * @param {string[]} [options.context=[]] Wikilinks, stored unresolved.
+	 * @param {string[]} [options.tags=[]]
+	 * @throws {Error} When `app` or `options.filename` is missing.
+	 */
 	constructor(app, options = {}) {
 		if (!app) {
-			const error = new Error('BaseClass requires an Obsidian app instance.');
- 			Log.error(
-				this,
-				error.message,
-				error
-			);
- 			throw error;
+			throw new Error('BaseClass requires an Obsidian app instance.');
 		}
 		if (!options.filename) {
-			const error = new Error('BaseClass requires a filename.');
- 			Log.error(
-				this,
-				error.message,
-				error
-			);
- 			throw error;
+			throw new Error('BaseClass requires a filename.');
 		}
 
 		this.app = app;
@@ -45,18 +44,14 @@ export class BaseClass {
 		this.filename = options.filename;
 		this.category = options.category ?? [];
 		this.affiliations = options.affiliations ?? [];
-		// Wikilink array. Catch-all cross-reference to any other object
-		// relevant to this note that doesn't fit an existing relational
-		// field. Carried on every note via BaseClass. Stored raw --
-		// BaseClass has no resolver access; subclasses that can resolve
-		// links may layer resolution on top of this raw value.
 		this.context = options.context ?? [];
 		this.tags = options.tags ?? [];
 	}
 
-	// Shared fields every class carries. Subclasses call this from
-	// getFrontmatterFields() and splice their own keys around it
-	// rather than overriding this directly.
+	/**
+	 * Returns the frontmatter fields every class carries.
+	 * @returns {Object}
+	 */
 	baseFrontmatterFields() {
 		return {
 			class: this.constructor.classValue,
@@ -69,70 +64,54 @@ export class BaseClass {
 		};
 	}
 
+	/**
+	 * Returns the frontmatter block followed by the body.
+	 * @returns {string}
+	 */
 	buildContent() {
 		return `${ this.buildFrontmatter() }\n\n${ this.getBody() }`;
 	}
 
+	/**
+	 * Returns the frontmatter block for this note.
+	 * @returns {string}
+	 */
 	buildFrontmatter() {
 		return buildFrontmatterBlock(this.getFrontmatterFields());
 	}
 
+	/**
+	 * Writes the note to the vault, then runs `postCreate`.
+	 * @returns {Promise<import('obsidian').TFile>} The created note.
+	 * @throws {Error} When a file already exists at the path or the write fails.
+	 */
 	async create() {
 		if (this.app.vault.getAbstractFileByPath(this.path)) {
-			const error = new Error(`A file already exists at ${ this.path }`);
- 			Log.error(
-				this,
-				error.message,
-				error
-			);
- 			throw error;
+			throw new Error(`A file already exists at ${ this.path }`);
 		}
 
-		let file;
-		try {
-			file = await this.app.vault.create(this.path, this.buildContent());
- 			Log.log(this, `Created ${ this.path }`);
-		} catch (error) {
-			Log.fatal(
-				this,
-				`Failed to create ${ this.path }`,
-				error
-			);
- 			throw error;
-		}
+		const file = await this.app.vault.create(this.path, this.buildContent());
+		Log.log(this, `Created ${ this.path }`);
 
-		// Runs after the file is confirmed on disk. A failure here throws
-		// and propagates out of create() same as any other error -- the
-		// note itself already exists at this point, so a curator seeing
-		// this error knows the primary creation succeeded and only the
-		// follow-on work needs manual reconciliation.
 		await this.postCreate(file);
 
 		return file;
 	}
 
 	/**
-	 * Hook for subclasses to run additional work after this note has been
-	 * successfully written to disk. No-op by default. Receives the newly
-	 * created TFile. Subclasses that override this should call
-	 * super.postCreate(file) first, then layer their own behavior on top,
-	 * so the chain composes across the tier the same way
-	 * getFrontmatterFields() does.
+	 * Runs after the note is written to disk. No-op by default.
+	 * @param {import('obsidian').TFile} file The created note.
+	 * @returns {Promise<void>}
 	 */
 	async postCreate(file) {
-		// no-op by default
 	}
 
 	/**
-	 * Finds the affiliation entry on a note that identifies *it* — the first
-	 * value in its own `affiliations` frontmatter matching one of the given
-	 * prefixes — so a referencing note can copy that value verbatim instead of
-	 * someone re-typing it and risking a mismatch that silently breaks the
-	 * graph connection. Returns undefined if no such entry is found.
-	 * No default for `prefixes`: there's no Apparatus-wide affiliation
-	 * namespace, only per-taxonomy conventions (ENVOY's "agent."/"market.",
-	 * whatever Calamity's classes settle on, etc.) — callers supply their own,
-	 * the way ENVOY's core/affiliations.js wrapper does.
+	 * Returns the first of the file's affiliations that starts with one of the given prefixes.
+	 * @param {import('obsidian').App} app
+	 * @param {import('obsidian').TFile} file
+	 * @param {string[]} prefixes
+	 * @returns {string|undefined}
 	 */
 	static findIdentityAffiliation(
 		app,
@@ -144,28 +123,35 @@ export class BaseClass {
 	}
 
 	/**
-	 * Override in subclasses to add class-specific fields, in whatever
-	 * key order the frontmatter should render.
+	 * Returns the frontmatter fields in render order. Override to add class-specific fields.
+	 * @returns {Object}
 	 */
 	getFrontmatterFields() {
 		return this.baseFrontmatterFields();
 	}
 
 	/**
-	 * Override in subclasses — markdown body below the frontmatter.
+	 * Returns the markdown body below the frontmatter. Override in subclasses.
+	 * @returns {string}
 	 */
 	getBody() {
 		return '';
 	}
 
+	/**
+	 * Vault path of the note: `<folder>/<filename>.md`.
+	 * @returns {string}
+	 */
 	get path() {
 		const folderPart = this.folder ? `${ this.folder }/` : '';
 		return `${ folderPart }${ this.filename }.md`;
 	}
 
-	// Default folder-resolution strategy: the parent folder of the file
-	// the command was run from. Override in subclasses that need a
-	// different strategy (e.g. a folder-suggest modal).
+	/**
+	 * Returns the destination folder path: the active file's parent folder, or `''` when there is none. Override to change the strategy.
+	 * @param {import('obsidian').App} app
+	 * @returns {Promise<string>}
+	 */
 	static async resolveFolder(app) {
 		return app.workspace.getActiveFile()?.parent?.path ?? '';
 	}
