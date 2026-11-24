@@ -3,7 +3,7 @@ class: archive
 category: specification
 affiliations:
 created: 2026-11-10
-modified: 2026-11-10
+modified: 2026-11-11
 context:
   - "[[Apparatus Module Taxonomy]]"
   - "[[Apparatus Status Taxonomy]]"
@@ -20,7 +20,7 @@ Scene note for a story. Carries a manuscript stage, a stage-dependent status, an
 ## 1. Scope and Class Shape
 ---
 
-`Scene` extends `BaseClass`. It adds three frontmatter fields (`stage`, a status field whose key depends on `stage`, and `chapter`), replaces the stored type of `context`, and supplies a body made of a comment-scanning Dataview script, an empty text area, and a status reference.
+`Scene` extends `BaseClass`. It adds three frontmatter fields (`stage`, a status field whose key depends on `stage`, and `chapter`), and supplies a body made of a comment-scanning Dataview script, an empty text area, and a status reference.
 
 | Property | Value |
 | --- | --- |
@@ -52,9 +52,9 @@ All `BaseClass` options apply, as specified in [[BaseClass.js Specification]] §
 | `options.stage` | No | `''` | `this.stage` |
 | `options.editorialStatus` | No | `''` | `this.editorialStatus` |
 | `options.chapter` | No | `''` | `this.chapter` |
-| `options.context` | No | `''` | `this.context` |
+| `options.context` | No | `[]` | `this.context` |
 
-`options.context` is stored as a string and replaces the `[]` default that `BaseClass` assigns. `this.editorialStatus` holds the status value for either status key (§4).
+`this.editorialStatus` holds the status value for either status key (§4).
 
 **Members**
 
@@ -66,7 +66,7 @@ All `BaseClass` options apply, as specified in [[BaseClass.js Specification]] §
 ## 2. Frontmatter Fields
 ---
 
-**Inherited fields:** `class`, `category`, `affiliations`, `created`, `modified`, `context`, `tags`, as specified in [[BaseClass.js Specification]] §2. `context` is re-stored as a string (§1) and renders after `chapter`. **Class-specific fields:** `stage`, the status field, and `chapter`.
+**Inherited fields:** `class`, `category`, `affiliations`, `created`, `modified`, `context`, `tags`, as specified in [[BaseClass.js Specification]] §2. `context` renders after `chapter`. **Class-specific fields:** `stage`, the status field, and `chapter`.
 
 **Fields**, in render order, as returned by `getFrontmatterFields()`:
 
@@ -92,7 +92,7 @@ All `BaseClass` options apply, as specified in [[BaseClass.js Specification]] §
 | `stage` | The manuscript pipeline stage the scene belongs to. Selects the status key (§4). |
 | `editorial-status` or `serial-status` | The scene's status within its stage (§4). |
 | `chapter` | The chapter number as an Arabic numeral. Serial chapter headings are written as Roman numerals, so this property carries the sortable number; the Custom File Explorer Sorting plugin orders scene notes by it. |
-| `context` | Catch-all cross-reference. In a revision stage it links to the chapters in the prior stage that make up this stage's chapter. |
+| `context` | Catch-all cross-reference, a list of links. In a revision stage it links to the chapters in the prior stage that make up this stage's chapter. |
 
 **Members**
 
@@ -113,16 +113,16 @@ A scene carries one status field. Both keys are domain-scoped properties registe
 | Condition | Frontmatter key | Valid values |
 | --- | --- | --- |
 | `stage` equals `Scene.SERIAL_STAGE` (`serial-draft`) | `serial-status` | `backlog`, `active`, `ready`, `published` |
-| Any other `stage`, including `''` | `editorial-status` | `not-started`, `in-progress`, `revision`, `complete` |
+| Any other `stage`, including `''` | `editorial-status` | `backlog`, `in-progress`, `revision`, `ready`, `complete`, `abandoned` |
 
-The class does not check `editorialStatus` against the valid values. The valid values are used only by the body's reference block (§5).
+The class does not check `editorialStatus` against the valid values. The valid values are used by the body's reference block (§5) and by the modal's status control (§6).
 
 **Members**
 
 | Member | Kind | Purpose | Rationale |
 | --- | --- | --- | --- |
 | `static SERIAL_STAGE` | static | The stage name `'serial-draft'`. A scene at this stage uses `serial-status`. | A serial's first-draft stage is tracked on its own publication lifecycle, so its status key differs from every other stage. |
-| `static EDITORIAL_STATUS_VALUES` | static | `['not-started', 'in-progress', 'revision', 'complete']`. | The two status vocabularies are distinct sets. `editorial-status` tracks draft and edit progress. |
+| `static EDITORIAL_STATUS_VALUES` | static | `['backlog', 'in-progress', 'revision', 'ready', 'complete', 'abandoned']`. | The two status vocabularies are distinct sets. `editorial-status` tracks draft and edit progress. |
 | `static SERIAL_STATUS_VALUES` | static | `['backlog', 'active', 'ready', 'published']`. | `serial-status` tracks a serialized post's own publication lifecycle. |
 | `get statusFieldKey()` | getter | Returns `'serial-status'` when `this.stage` equals `Scene.SERIAL_STAGE`, otherwise `'editorial-status'`. | Derived from `stage` instead of stored, so it cannot drift out of sync with it. |
 | `get statusValues()` | getter | Returns `Scene.SERIAL_STATUS_VALUES` when `this.stage` equals `Scene.SERIAL_STAGE`, otherwise `Scene.EDITORIAL_STATUS_VALUES`. | — |
@@ -192,7 +192,7 @@ if (results.length === 0) {
 ```
 editorial-status
 ----------------
-not-started | in-progress | revision | complete
+backlog | in-progress | revision | ready | complete | abandoned
 ```
 
 For `serial-draft`:
@@ -214,9 +214,9 @@ backlog | active | ready | published
 
 **Location:** `.codex/creative/modals/SceneModal.js`. Export: `SceneModal`, which extends `BaseModal`.
 
-**Dependencies:** `BaseModal` from `../../core/modals/BaseModal.js`; `Scene` from `../objects/Scene.js`, passed to `buildCategorySetting` (§3).
+**Dependencies:** `BaseModal` from `../../core/modals/BaseModal.js`; `Scene` from `../objects/Scene.js`, passed to `buildCategorySetting` (§3) and read for the serial stage and the status values (§4).
 
-**Result object:** `this.result` is initialized by the `BaseModal` constructor, then assigned `filename: ''`, `category: []`, `affiliations: []`, `tags: []`, `stage: ''`, `editorialStatus: ''`, `chapter: ''`, `context: ''`. `context` is a string, replacing the `[]` that `BaseModal` initializes.
+**Result object:** `this.result` is initialized by the `BaseModal` constructor, then assigned `filename: ''`, `category: []`, `affiliations: []`, `tags: []`, `stage: ''`, `editorialStatus: ''`, `chapter: ''`, `context: []`.
 
 **Field build order**
 
@@ -227,10 +227,10 @@ backlog | active | ready | published
 | 1 | Filename | `buildTextSetting` | `filename` |
 | 2 | Category | `buildCategorySetting(contentEl, Scene)` | `category` |
 | 3 | Affiliations | `buildListSuggestSetting` (frontmatter key `affiliations`) | `affiliations` |
-| 4 | Stage | `buildDropdownSetting` | `stage` |
-| 5 | Editorial / Serial status | `buildDropdownSetting` | `editorialStatus` |
+| 4 | Stage | `buildDropdownSetting`, with an `onChange` that rebuilds the status control | `stage` |
+| 5 | Serial status or Editorial status | `buildDropdownSetting`, rendered by `buildStatusSetting` | `editorialStatus` |
 | 6 | Chapter | `buildTextSetting` | `chapter` |
-| 7 | Context | `buildTextSetting` | `context` |
+| 7 | Context | `buildContextSetting` | `context` |
 | 8 | Tags | `buildListSuggestSetting` (frontmatter key `tags`) | `tags` |
 
 It then calls `buildSubmitButton`.
@@ -238,14 +238,15 @@ It then calls `buildSubmitButton`.
 **Class-specific mechanisms**
 
 - **Stage options**, fixed in the modal, in order: `shitty-first-draft`, `serial-draft`, `reassembly`, `1st-edit`, `2nd-edit`, `3rd-edit`, `final`.
-- **Status options**, fixed in the modal, for every stage: `not-started`, `in-progress`, `revision`, `complete`. The dropdown does not change with the selected stage.
+- **Dependent status control.** Stage and the status control each render in their own container, the status container directly beneath Stage's. The status options depend on the selected Stage: at `Scene.SERIAL_STAGE` the control is labeled Serial status and offers `Scene.SERIAL_STATUS_VALUES`; at any other Stage it is labeled Editorial status and offers `Scene.EDITORIAL_STATUS_VALUES`. Until a Stage is selected the container is empty. Every Stage change empties and rebuilds the container. A stored `editorialStatus` that is not valid for the new Stage is cleared; a valid one is kept and shown.
 
 **Members**
 
 | Member | Kind | Purpose | Rationale |
 | --- | --- | --- | --- |
 | `constructor(app, onSubmit)` | instance | Calls `super(app, onSubmit)` and assigns the result fields above. | — |
-| `onOpen()` | hook | Renders the fields in the order above and the submit button. | The `serial-draft` stage option must equal `Scene.SERIAL_STAGE` exactly, because `statusFieldKey` selects the status key by exact string match. The status label names both keys because `Scene` derives the key from the stage, so the modal has no separate switch to keep in sync. |
+| `onOpen()` | hook | Renders the fields in the order above and the submit button. Stage and the status control are rendered in their own containers. | The `serial-draft` stage option must equal `Scene.SERIAL_STAGE` exactly, because `statusFieldKey` selects the status key by exact string match. |
+| `buildStatusSetting(containerEl, stage)` | instance | Empties `containerEl`. With no `stage`, clears `editorialStatus` and renders nothing. Otherwise clears `editorialStatus` when it is not valid for the stage, then renders the status dropdown for the stage's vocabulary. | The status vocabulary depends on the Stage, so the control is rebuilt on each Stage change and the options come from `Scene`, so the modal and the class cannot disagree. |
 
 ## 7. Command
 ---
@@ -260,10 +261,12 @@ On invocation the command:
 4. Constructs a `Scene` with `{ folder, filename, ...rest }` and calls `create()`.
 5. Opens the created file in the active leaf.
 
+An error raised while building or opening the modal, or in the submit handler, is caught and logged once as `Log.error('creative-create-scene', error.message, error)`. The command does not rethrow.
+
 | Member | Kind | Purpose | Rationale |
 | --- | --- | --- | --- |
 | `buildInvokeCommand(app)` | function | Returns the Obsidian command descriptor. | — |
-| `callback()` | internal | Constructs and opens the `SceneModal` with the submit handler above. | — |
+| `callback()` | internal | Constructs and opens the `SceneModal` with the submit handler above, and catches and logs any error raised while doing so. | — |
 
 ## 8. Additional Companion Files
 ---
@@ -281,6 +284,7 @@ None.
 | Member | Kind | Section |
 | --- | --- | --- |
 | `buildInvokeCommand` | function | §7 |
+| `buildStatusSetting` | instance | §6 |
 | `callback` | internal | §7 |
 | `classValue` | hook | §1 |
 | `constructor` (`Scene`) | instance | §1 |

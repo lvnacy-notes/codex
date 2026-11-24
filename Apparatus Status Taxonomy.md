@@ -53,15 +53,15 @@ Examples:
 ## 4. Canonical Status Properties
 ---
 
-| Property | Applies to | Purpose | Canonical values |
-| -------- | ---------- | ------- | ---------------- |
-| `catalog-status`   | library records, work indexes, ingest-oriented notes | cataloging and processing state           | `raw`, `active`, `processed`, `archived`, `placeholder`, `shelved`           |
-| `release-status`   | `edition`, `column`                                  | publication readiness                     | `backlog`, `planned`, `ready`, `published`, `archived`                       |
-| `editorial-status` | `manuscript`, `scene` except serial-draft            | drafting and revision state               | `backlog`, `in-progress`, `revision`, `ready`, `complete`, `abandoned`       |
-| `serial-status`    | `manuscript`, `scene` in `serial-draft` workflow     | serial drafting state                     | `backlog`, `in-progress`, `revision`, `ready`, `complete`, `abandoned`       |
-| `story-status`     | `story`                                              | project lifecycle for the work as a whole | `backlog`, `active`, `paused`, `complete`, `abandoned`                       |
-| `archive-status`   | archive/system notes                                 | preservation and lifecycle state          | `active`, `archived`, `retained`, `deprecated`                               |
-| `workflow-status`  | admin/ops container notes and project boards         | operational lifecycle                     | `backlog`, `active`, `paused`, `processing`, `ready`, `complete`, `archived` |
+| Property           | Applies to                                           | Purpose                                                                                      | Canonical values                                                             |
+| ------------------ | ---------------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `catalog-status`   | library records, work indexes, ingest-oriented notes | cataloging and processing state                                                              | `raw`, `active`, `processed`, `archived`, `placeholder`, `shelved`           |
+| `release-status`   | `edition`, `column`                                  | publication readiness                                                                        | `backlog`, `planned`, `ready`, `published`, `archived`                       |
+| `editorial-status` | `manuscript`, `scene` except serial-draft            | drafting and revision state                                                                  | `backlog`, `in-progress`, `revision`, `ready`, `complete`, `abandoned`       |
+| `serial-status`    | `manuscript`, `scene` in `serial-draft` workflow     | serial drafting state                                                                        | `backlog`, `active`, `ready`, `published`                                    |
+| `story-status`     | `story`                                              | project lifecycle for the work as a whole                                                    | `backlog`, `active`, `paused`, `complete`, `abandoned`                       |
+| `archive-status`   | archive/system notes                                 | preservation and lifecycle state                                                             | `active`, `archived`, `retained`, `deprecated`                               |
+| `workflow-status`  | admin/ops container notes and project boards         | operational lifecycle                                                                        | `backlog`, `active`, `paused`, `processing`, `ready`, `complete`, `archived` |
 | `library-status`   | library root/dashboard notes (`Library.js`)          | lifecycle state of the library itself, distinct from `catalog-status` on the works within it | `unbound`, `active`, `dormant`, `musty`, `archived`                          |
 
 ## 5. Usage Guidance

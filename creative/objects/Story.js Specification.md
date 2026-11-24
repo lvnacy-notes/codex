@@ -175,9 +175,9 @@ A story carries two status fields. Both are domain-scoped properties registered 
 | Key | Meaning | Values offered by `StoryModal` |
 | --- | --- | --- |
 | `story-status` | Lifecycle of the story as a whole. | `backlog`, `active`, `paused`, `complete`, `abandoned`, `archived` |
-| `editorial-status` | Progress of the story's active stage, mirroring that stage's own manuscript note. | `backlog`, `in-progress`, `revision`, `complete` |
+| `editorial-status` | Progress of the story's active stage, mirroring that stage's own manuscript note. | `Scene.EDITORIAL_STATUS_VALUES`: `backlog`, `in-progress`, `revision`, `ready`, `complete`, `abandoned` |
 
-`Story` always writes the second field under the key `editorial-status`, including at the `serial-draft` stage. The class does not validate either value. The value lists are declared inline in `StoryModal.onOpen()`; `Story.js` declares none. No members.
+`Story` always writes the second field under the key `editorial-status`, including at the `serial-draft` stage. The class does not validate either value. The `story-status` list is declared inline in `StoryModal.onOpen()`. The `editorial-status` list is read from `Scene.EDITORIAL_STATUS_VALUES`. `Story.js` declares neither. No members.
 
 ## 5. Body Content
 ---
@@ -201,7 +201,7 @@ A story carries two status fields. Both are domain-scoped properties registered 
 
 **Progress dashboard queries.** `<storyTag>` stands for the story tag. Each is shown as generated.
 
-**stage completion** (`## stage completion`). Loads `getStagePipeline` with `requireAsync`, takes the first value of the current note's `category`, and gets its stage list. For each stage it counts scenes tagged `<storyTag>` at that stage by status. `serial-draft` scenes are read through `serial-status` with the values `backlog`, `active`, `ready`, `published`. Every other stage is read through `editorial-status` with `not-started`, `in-progress`, `revision`, `complete`. The last value is the done state. Prints one line per stage: done over total, the done label, the percentage, and the count of each remaining value.
+**stage completion** (`## stage completion`). Loads `getStagePipeline` with `requireAsync`, takes the first value of the current note's `category`, and gets its stage list. For each stage it counts scenes tagged `<storyTag>` at that stage by status. `serial-draft` scenes are read through `serial-status` with the values `Scene.SERIAL_STATUS_VALUES` (`backlog`, `active`, `ready`, `published`), and the done state is `published`. Every other stage is read through `editorial-status` with `Scene.EDITORIAL_STATUS_VALUES` (`backlog`, `in-progress`, `revision`, `ready`, `complete`, `abandoned`), and the done state is `complete`. The lists are interpolated into the script at generation. Prints one line per stage: done over total, the done label, the percentage, and the count of each remaining value.
 
 ```js
 const { getStagePipeline } = await requireAsync('/.codex/creative/controls/manuscript-pipelines.js');
@@ -209,26 +209,23 @@ const [category] = dv.current().category;
 const stages = getStagePipeline(category);
 const allScenes = dv.pages("#<storyTag>").where(p => `${ p.class }`.includes("scene"));
 
-// serial-draft scenes carry serial-status (its own vocabulary, distinct
-// completion label) instead of editorial-status -- everything else uses
-// the shared editorial-status vocabulary. In each list, the last value is
-// treated as the "done" state driving the completion percentage.
-const STATUS_VALUES_BY_STAGE = {
-	'serial-draft': ['backlog', 'active', 'ready', 'published'],
+// serial-draft scenes carry serial-status; every other stage carries
+// editorial-status. A vocabulary's done value drives the completion percentage.
+const STATUS_BY_STAGE = {
+	'serial-draft': { values: ['backlog', 'active', 'ready', 'published'], done: 'published' },
 };
-const DEFAULT_STATUS_VALUES = ['not-started', 'in-progress', 'revision', 'complete'];
+const DEFAULT_STATUS = { values: ['backlog', 'in-progress', 'revision', 'ready', 'complete', 'abandoned'], done: 'complete' };
 
 for (let stage of stages) {
 	const scenes = allScenes.where(p => `${ p.stage }`.includes(stage));
 	const total = scenes.length;
-	const values = STATUS_VALUES_BY_STAGE[stage] ?? DEFAULT_STATUS_VALUES;
+	const { values, done } = STATUS_BY_STAGE[stage] ?? DEFAULT_STATUS;
 	const statusOf = (p) => stage === 'serial-draft' ? p["serial-status"] : p["editorial-status"];
 	const counts = values.map((v) => scenes.where(p => statusOf(p) === v).length);
-	const doneLabel = values[values.length - 1];
-	const doneCount = counts[counts.length - 1];
+	const doneCount = counts[values.indexOf(done)];
 	const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-	const breakdown = values.slice(0, -1).map((v, i) => `${ counts[i] } ${ v }`).join(' | ');
-	dv.paragraph(`**${ stage }**: ${doneCount}/${total} ${doneLabel} (${percent}%) | ${breakdown}`);
+	const breakdown = values.filter((v) => v !== done).map((v) => `${ counts[values.indexOf(v)] } ${ v }`).join(' | ');
+	dv.paragraph(`**${ stage }**: ${doneCount}/${total} ${done} (${percent}%) | ${breakdown}`);
 }
 ```
 
@@ -404,6 +401,7 @@ if (results.length === 0) {
 | `getBody()` | hook | Returns the dashboard and documentation string for this story. Throws the `pipeline` error (§6) when `category[0]` is empty or has no pipeline. | — |
 | `buildStoryDashboard({ title, storyTag, pipeline })` | internal | Returns the full body string, interpolating `title`, `storyTag`, and the stage list into the sections above. | — |
 | `buildFolderTreeLines(pipeline)` | internal | Returns the stage entries of the folder tree, one per stage: the stage folder, its `<stage>.md` note, and the stage description. The first stage's note also lists the Longform config, story synopsis, character, faction, and glossary tables, and the story outline. | The first stage's folder note carries the story bible, so it gets the expanded comment the other stages do not. |
+| `formatValueList(values)` | internal | Returns a status value list as the contents of a JavaScript array literal: each value single-quoted, joined by `, `. Used to interpolate the status vocabularies into the stage completion script. | The vocabularies are read from `Scene` at generation, so the script and the class cannot disagree. |
 | `STAGE_DESCRIPTIONS` | internal | Maps the conventional stage names to a one-line description. | A stage with no entry falls back to its own name, so a custom or renamed stage never renders an empty description. |
 
 ## 6. Stage Pipeline and Story Tag
@@ -438,7 +436,7 @@ A story's stage list is fixed by its length/form. `pipeline` resolves it from `c
 
 **Location:** `.codex/creative/modals/StoryModal.js`. Export: `StoryModal`, which extends `BaseModal`.
 
-**Dependencies:** `BaseModal` from `../../core/modals/BaseModal.js`.
+**Dependencies:** `BaseModal` from `../../core/modals/BaseModal.js`; `Scene` from `../objects/Scene.js`, read for the editorial status values (§4).
 
 **Result object:** `this.result` is initialized by the `BaseModal` constructor, then assigned `titleAbbv: ''`, `category: []`, `cycle: ''`, `affiliations: []`, `gitRepoUrl: ''`, `vaultMembership: []`, `storyStatus: ''`, `editorialStatus: ''`, `tags: []`.
 
@@ -465,7 +463,7 @@ It then calls `buildSubmitButton`.
 - **Required field.** Title Abbreviation is required to scaffold a story, but `BaseModal` has no required-field validation. The command enforces it (§8).
 - **Not collected.** `filename` and `title` come from the folder the command runs in, `sort-title` is derived by `Story` (§2), and `stage` is set by `Story` (§1). Manuscript links and the publication fields are left at their defaults.
 - **Cycle** is a single value, stored as a plain string.
-- **Status options**, fixed in the modal: see §4.
+- **Status options.** The `story-status` options are fixed in the modal. The editorial status options come from `Scene.EDITORIAL_STATUS_VALUES` (§4).
 
 **Members**
 
@@ -555,6 +553,7 @@ The basename of each created note is stored in `story.manuscriptLinks[stage]`, w
 | `COMMAND_ID` | internal | §8 |
 | `constructor` (`Story`) | instance | §1 |
 | `constructor` (`StoryModal`) | instance | §7 |
+| `formatValueList` | internal | §5 |
 | `getBody` | hook | §5 |
 | `getFrontmatterFields` | hook | §2 |
 | `getPriorStage` | function | §6 |

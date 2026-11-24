@@ -21,10 +21,12 @@ export class Scene extends BaseClass {
 	 * @type {string[]}
 	 */
 	static EDITORIAL_STATUS_VALUES = [
-		'not-started',
+		'backlog',
 		'in-progress',
 		'revision',
-		'complete'
+		'ready',
+		'complete',
+		'abandoned'
 	];
 	
 	/**
@@ -45,14 +47,14 @@ export class Scene extends BaseClass {
 	 * @param {string} [options.stage] Manuscript stage name. Defaults to `''`.
 	 * @param {string} [options.editorialStatus] Status value, written under the key from `statusFieldKey`. Defaults to `''`.
 	 * @param {string} [options.chapter] Chapter number. Defaults to `''`.
-	 * @param {string} [options.context] Context value. Defaults to `''`.
+	 * @param {string[]} [options.context] Cross-reference links. Defaults to `[]`.
 	 */
 	constructor(app, options = {}) {
 		super(app, options);
 		this.stage = options.stage ?? '';
 		this.editorialStatus = options.editorialStatus ?? '';
 		this.chapter = options.chapter ?? '';
-		this.context = options.context ?? '';
+		this.context = options.context ?? [];
 	}
 
 	/**

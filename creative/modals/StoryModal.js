@@ -1,4 +1,5 @@
 import { BaseModal } from '../../core/modals/BaseModal.js';
+import { Scene } from '../objects/Scene.js';
 
 /**
  * Valid length/form values for a story's `category`.
@@ -94,12 +95,7 @@ export class StoryModal extends BaseModal {
             contentEl,
             'Editorial status',
             'editorialStatus',
-            [
-                'backlog',
-                'in-progress',
-                'revision',
-                'complete',
-		    ]
+            Scene.EDITORIAL_STATUS_VALUES
         );
 		this.buildListSuggestSetting(
             contentEl,

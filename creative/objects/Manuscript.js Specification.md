@@ -56,7 +56,7 @@ All `BaseClass` options apply, as specified in [[BaseClass.js Specification]] §
 | `options.stage` | `''` | `this.stage` |
 | `options.editorialStatus` | `''` | `this.editorialStatus` |
 | `options.priorStage` | `null` | `this.priorStage` |
-| `options.context` | `''` | `this.context` |
+| `options.context` | `[]` | `this.context` |
 | `options.storyTag` | `''` | `this.storyTag` |
 | `options.format` | `'scenes'` | `this.longform.format` |
 | `options.title` | `''` | `this.longform.title` |
@@ -66,7 +66,7 @@ All `BaseClass` options apply, as specified in [[BaseClass.js Specification]] §
 | `options.sceneTemplate` | `''` | `this.longform.sceneTemplate` |
 | `options.scenes` | `[]` | `this.longform.scenes` |
 
-`priorStage` is the stage before this one in the story's pipeline, or `null` for the first stage. `storyTag` is the vault tag scoping the story's notes. Neither is written to frontmatter as its own field. `priorStage` feeds the body (§5), and `storyTag` feeds the body and is merged into `tags` (§2). `options.context` is stored as given and defaults to `''`, not the `[]` that `BaseClass` assigns. `this.editorialStatus` holds the status value for either status key (§4).
+`priorStage` is the stage before this one in the story's pipeline, or `null` for the first stage. `storyTag` is the vault tag scoping the story's notes. Neither is written to frontmatter as its own field. `priorStage` feeds the body (§5), and `storyTag` feeds the body and is merged into `tags` (§2). `this.editorialStatus` holds the status value for either status key (§4).
 
 **Members**
 
@@ -78,7 +78,7 @@ All `BaseClass` options apply, as specified in [[BaseClass.js Specification]] §
 ## 2. Frontmatter Fields
 ---
 
-**Inherited fields:** `class`, `category`, `affiliations`, `created`, `modified`, `context`, and `tags`, as specified in [[BaseClass.js Specification]] §2. `context` is re-stored from the option (§1) and renders after `longform`. `tags` always includes the story tag when `storyTag` is set. **Class-specific fields:** `stage`, the status field, `longform`, and `sorting-spec`.
+**Inherited fields:** `class`, `category`, `affiliations`, `created`, `modified`, `context`, and `tags`, as specified in [[BaseClass.js Specification]] §2. `context` renders after `longform`. `tags` always includes the story tag when `storyTag` is set. **Class-specific fields:** `stage`, the status field, `longform`, and `sorting-spec`.
 
 **Fields**, in render order, as returned by `getFrontmatterFields()`:
 
@@ -96,7 +96,7 @@ All `BaseClass` options apply, as specified in [[BaseClass.js Specification]] §
 | 10 | `sorting-spec` | `SCENE_SORTING_SPEC` | n/a |
 | 11 | `tags` | The story tag first, then `base.tags`, with duplicates removed. `base.tags` alone when `storyTag` is empty. | `tags:` |
 
-`base` is the object returned by `baseFrontmatterFields()`. `stage` is written as supplied, with no validation. `longform` renders as an indented mapping with the keys below, in this order. An empty `scenes` array renders as `scenes:`. `sorting-spec` is a fixed string that ends in a newline, so it renders as a block scalar: `sorting-spec: |-` followed by the indented specification line.
+`base` is the object returned by `baseFrontmatterFields()`. `stage` is written as supplied, with no validation. `longform` renders as an indented mapping with the keys below, in this order. An empty `scenes` array renders as `scenes:`. `sorting-spec` is a fixed string that ends in a newline, so it renders as a block scalar: `sorting-spec: |-`, the indented specification line, and a whitespace-only line. It parses to the string without the newline.
 
 **Class-specific field meanings**
 
@@ -369,13 +369,12 @@ The command constructs each `Manuscript` with:
 | --- | --- |
 | `folder` | `<story folder>/<stage>` |
 | `filename` | The stage name |
-| `category` | `'draft'` |
+| `category` | `['draft']` |
 | `affiliations` | The story's `affiliations` |
-| `tags` | `[story.storyTag]` |
 | `stage` | The stage name |
 | `editorialStatus` | `''` |
 | `priorStage` | `getPriorStage(story.category, stage)` |
-| `context` | `''` |
+| `context` | `[]` |
 | `storyTag` | `story.storyTag` |
 | `title` | `story.title` |
 | `sceneTemplate` | The vault path of the template whose suffix `sceneTemplateSuffixForStage(stage)` returns, or `''` when there is none |
@@ -402,6 +401,7 @@ None.
 | `constructor` | instance | §1 |
 | `getBody` | hook | §5 |
 | `getFrontmatterFields` | hook | §2 |
+| `SCENE_SORTING_SPEC` | internal | §2 |
 | `statusFieldFor` | internal | §4 |
 
 ## Appendix: Specification Change Log

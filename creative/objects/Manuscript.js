@@ -17,7 +17,7 @@ export class Manuscript extends BaseClass {
 	 * @param {string} [options.stage] Stage name. Defaults to `''`.
 	 * @param {string} [options.editorialStatus] Status of the stage. Defaults to `''`.
 	 * @param {?string} [options.priorStage] Stage before this one, or `null` for the first stage. Defaults to `null`.
-	 * @param {string} [options.context] Defaults to `''`.
+	 * @param {string[]} [options.context] Cross-reference links. Defaults to `[]`.
 	 * @param {string} [options.storyTag] Vault tag scoping the story's notes. Defaults to `''`.
 	 * @param {string} [options.format] Defaults to `'scenes'`.
 	 * @param {string} [options.title] Defaults to `''`.
@@ -32,7 +32,7 @@ export class Manuscript extends BaseClass {
 		this.stage = options.stage ?? '';
 		this.editorialStatus = options.editorialStatus ?? '';
 		this.priorStage = options.priorStage ?? null;
-		this.context = options.context ?? '';
+		this.context = options.context ?? [];
 		this.storyTag = options.storyTag ?? '';
 		this.longform = {
 			format: options.format ?? 'scenes',

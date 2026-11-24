@@ -20,7 +20,7 @@ export class SceneModal extends BaseModal {
 			stage: '',
 			editorialStatus: '',
 			chapter: '',
-			context: '',
+			context: [],
 		});
 	}
 
@@ -43,8 +43,10 @@ export class SceneModal extends BaseModal {
 			'affiliations',
 			'affiliations'
 		);
+		const stageEl = contentEl.createDiv();
+		const statusEl = contentEl.createDiv();
 		this.buildDropdownSetting(
-			contentEl,
+			stageEl,
 			'Stage',
 			'stage',
 			[
@@ -53,29 +55,17 @@ export class SceneModal extends BaseModal {
 				'reassembly',
 				'1st-edit',
 				'2nd-edit',
-			'3rd-edit',
-			'final',
-		]);
-		this.buildDropdownSetting(
-			contentEl,
-			'Editorial / Serial status',
-			'editorialStatus',
-			[
-				'not-started',
-				'in-progress',
-			'revision',
-			'complete',
-		]);
+				'3rd-edit',
+				'final',
+			],
+			(stage) => this.buildStatusSetting(statusEl, stage)
+		);
 		this.buildTextSetting(
 			contentEl,
 			'Chapter',
 			'chapter'
 		);
-		this.buildTextSetting(
-			contentEl,
-			'Context',
-			'context'
-		);
+		this.buildContextSetting(contentEl);
 		this.buildListSuggestSetting(
 			contentEl,
 			'Tags',
@@ -84,5 +74,29 @@ export class SceneModal extends BaseModal {
 		);
 
 		this.buildSubmitButton(contentEl);
+	}
+
+	/**
+	 * Rebuilds the status control for a stage: serial-status options at the serial stage, editorial-status options at any other stage, and nothing when no stage is selected. Clears the stored status when it is not valid for the stage.
+	 * @param {HTMLElement} containerEl Container the control renders in. Emptied first.
+	 * @param {string} stage Selected stage, or `''`.
+	 */
+	buildStatusSetting(containerEl, stage) {
+		containerEl.empty();
+		if (!stage) {
+			this.result.editorialStatus = '';
+			return;
+		}
+		const isSerial = stage === Scene.SERIAL_STAGE;
+		const options = isSerial ? Scene.SERIAL_STATUS_VALUES : Scene.EDITORIAL_STATUS_VALUES;
+		if (!options.includes(this.result.editorialStatus)) {
+			this.result.editorialStatus = '';
+		}
+		this.buildDropdownSetting(
+			containerEl,
+			isSerial ? 'Serial status' : 'Editorial status',
+			'editorialStatus',
+			options
+		);
 	}
 }

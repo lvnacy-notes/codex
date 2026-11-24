@@ -191,7 +191,7 @@ function buildSceneTemplateContent(app, storyTag, stage) {
 		stage,
 		editorialStatus: '',
 		chapter: '',
-		context: '',
+		context: [],
 		tags: [ storyTag ],
 	});
 	const fields = scene.getFrontmatterFields();
@@ -212,6 +212,15 @@ function buildFolderTreeLines(pipeline) {
 		}
 		return `\u251c\u2500\u2500 ${ stage }/                     # ${ description }\n\u2502   \u2514\u2500\u2500 ${ stage }.md               # Longform project config`;
 	}).join('\n');
+}
+
+/**
+ * Returns a status value list formatted for a JavaScript array literal.
+ * @param {string[]} values
+ * @returns {string}
+ */
+function formatValueList(values) {
+	return values.map((value) => `'${ value }'`).join(', ');
 }
 
 /**
@@ -255,26 +264,23 @@ const [category] = dv.current().category;
 const stages = getStagePipeline(category);
 const allScenes = dv.pages("#${ storyTag }").where(p => \`\${ p.class }\`.includes("scene"));
 
-// serial-draft scenes carry serial-status (its own vocabulary, distinct
-// completion label) instead of editorial-status -- everything else uses
-// the shared editorial-status vocabulary. In each list, the last value is
-// treated as the "done" state driving the completion percentage.
-const STATUS_VALUES_BY_STAGE = {
-	'serial-draft': ['backlog', 'active', 'ready', 'published'],
+// serial-draft scenes carry serial-status; every other stage carries
+// editorial-status. A vocabulary's done value drives the completion percentage.
+const STATUS_BY_STAGE = {
+	'serial-draft': { values: [${ formatValueList(Scene.SERIAL_STATUS_VALUES) }], done: 'published' },
 };
-const DEFAULT_STATUS_VALUES = ['not-started', 'in-progress', 'revision', 'complete'];
+const DEFAULT_STATUS = { values: [${ formatValueList(Scene.EDITORIAL_STATUS_VALUES) }], done: 'complete' };
 
 for (let stage of stages) {
 	const scenes = allScenes.where(p => \`\${ p.stage }\`.includes(stage));
 	const total = scenes.length;
-	const values = STATUS_VALUES_BY_STAGE[stage] ?? DEFAULT_STATUS_VALUES;
+	const { values, done } = STATUS_BY_STAGE[stage] ?? DEFAULT_STATUS;
 	const statusOf = (p) => stage === 'serial-draft' ? p["serial-status"] : p["editorial-status"];
 	const counts = values.map((v) => scenes.where(p => statusOf(p) === v).length);
-	const doneLabel = values[values.length - 1];
-	const doneCount = counts[counts.length - 1];
+	const doneCount = counts[values.indexOf(done)];
 	const percent = total > 0 ? Math.round((doneCount / total) * 100) : 0;
-	const breakdown = values.slice(0, -1).map((v, i) => \`\${ counts[i] } \${ v }\`).join(' | ');
-	dv.paragraph(\`**\${ stage }**: \${doneCount}/\${total} \${doneLabel} (\${percent}%) | \${breakdown}\`);
+	const breakdown = values.filter((v) => v !== done).map((v) => \`\${ counts[values.indexOf(v)] } \${ v }\`).join(' | ');
+	dv.paragraph(\`**\${ stage }**: \${doneCount}/\${total} \${done} (\${percent}%) | \${breakdown}\`);
 }
 \`\`\`
 
@@ -525,8 +531,8 @@ tags: [${ storyTag }]                  # Project identifier and additional metad
 ### status fields
 
 \`\`\`yaml
-editorial-status: [backlog|in-progress|revision|complete]  # every stage except serial-draft
-serial-status: [backlog|in-progress|revision|complete]     # serial-draft scenes only
+editorial-status: [${ Scene.EDITORIAL_STATUS_VALUES.join('|') }]  # every stage except serial-draft
+serial-status: [${ Scene.SERIAL_STATUS_VALUES.join('|') }]  # serial-draft scenes only
 \`\`\`
 
 **editorial-status** / **serial-status:** scene-level editorial state. See [[${ title }#status tracking]] above.

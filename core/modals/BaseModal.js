@@ -89,12 +89,14 @@ export class BaseModal extends Modal {
 	 * @param {string} label Field label.
 	 * @param {string} resultKey Key in `this.result`.
 	 * @param {string[]} options Selectable values.
+	 * @param {function(string): void} [onChange] Called with the selected value after it is stored.
 	 */
 	buildDropdownSetting(
 		containerEl,
 		label,
 		resultKey,
-		options
+		options,
+		onChange
 	) {
 		new Setting(containerEl)
 			.setName(label)
@@ -106,6 +108,7 @@ export class BaseModal extends Modal {
 				dropdown.setValue(this.result[resultKey] ?? '');
 				dropdown.onChange((value) => {
 					this.result[resultKey] = value;
+					onChange?.(value);
 				});
 			});
 	}

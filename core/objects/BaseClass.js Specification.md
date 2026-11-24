@@ -3,7 +3,7 @@ class: archive
 category: specification
 affiliations:
 created: 2026-11-01
-modified: 2026-11-07
+modified: 2026-11-11
 context:
   - "[[Apparatus Module Taxonomy]]"
   - "[[Apparatus Status Taxonomy]]"
@@ -213,7 +213,7 @@ None. `BaseClass` defines no status field and registers no status domain in [[Ap
 | `buildTextSuggestSetting(containerEl, label, resultKey, frontmatterKey, placeholder = '')` | instance | Text input with `ValueSuggest` (`single` mode) on `frontmatterKey` | String | Text field that suggests existing values of a frontmatter key. A selection replaces the stored value. | — |
 | `buildListSetting(containerEl, label, resultKey, placeholder = '', defaultValue = '', vocabulary = null)` | instance | Comma-separated text input | Array of trimmed, non-empty strings | `defaultValue` seeds the result. When `vocabulary` is given, entries outside it are still stored and a `Notice` names them. | Vocabulary validation is advisory, not enforced. |
 | `buildListSuggestSetting(containerEl, label, resultKey, frontmatterKey, placeholder = '', defaultValue = '')` | instance | Comma-separated text input with `ValueSuggest` (`list` mode) on `frontmatterKey` | Array of trimmed, non-empty strings | `defaultValue` seeds the result. Selecting a suggestion replaces the array with the selected value split on commas. | — |
-| `buildDropdownSetting(containerEl, label, resultKey, options)` | instance | Dropdown with a leading `—` empty option | String | Pick-one field. The initial value is `result[resultKey]`, or `''`. | — |
+| `buildDropdownSetting(containerEl, label, resultKey, options, onChange)` | instance | Dropdown with a leading `—` empty option | String | Pick-one field. The initial value is `result[resultKey]`, or `''`. `onChange`, when given, is called with the selected value after it is stored. | — |
 | `buildDropdownArraySetting(containerEl, label, resultKey, options)` | instance | Dropdown with a leading `—` empty option | `[]` when empty, `[value]` otherwise | Pick-one field whose selection is stored as a string array. | For fields that hold exactly one value but are typed as a string array across every class (e.g. a length or form category). |
 | `buildMultiSelectSetting(containerEl, label, resultKey, options)` | instance | Heading plus one toggle per option, all starting off | Array of selected options | Pick-many field. Initializes the result to `[]` when unset. | — |
 | `buildToggleSetting(containerEl, label, resultKey, defaultValue = false)` | instance | Single toggle | Boolean | Sets the result to `defaultValue` immediately on build. | Stores one boolean directly, unlike the per-array-value toggles of `buildMultiSelectSetting`. |
@@ -362,6 +362,7 @@ None.
 
 | Date       | Change       |
 | ---------- | ------------ |
+| 2026-11-11 | Added an optional `onChange` to `buildDropdownSetting` |
 | 2026-11-07 | Removed `Log.error` and `Log.fatal` calls from the constructor and `create()`; `BaseClass` throws and the invoking command logs |
 | 2026-11-06 | Unified `expectedClass` across `NoteSuggest` and `ValueSuggest` as `string[]`; added the shared `validateExpectedClass` |
 | 2026-11-04 | Added the input controls (`FileSuggest`, `FolderSuggest`, `NoteSuggest`, `ValueSuggest`) to §8 |
